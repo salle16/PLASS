@@ -843,7 +843,7 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
           <dt>Un élève « Bureau » n’est pas près du bureau.</dt><dd>Le choix ne compte que si la salle contient un bureau ou une paillasse du prof. Il s’applique au prochain Mélanger ; les règles « qui à côté de qui » passent avant.</dd>
           <dt>Comment revoir la classe d’exemple ?</dt><dd>Bouton <b>Voir l’exemple</b>, en haut. L’exemple s’affiche à la place de vos classes, que vous pouvez essayer librement : rien n’est enregistré. <b>Revenir à mes classes</b> (ou recharger la page) vous ramène à vos classes, intactes.</dd>
           <dt>Les élèves se retrouvent souvent avec les mêmes voisins.</dt><dd>Cochez <b>Changer de voisins</b> dans le panneau de gauche. Il faut au moins un plan dans l’historique : il s’en ajoute un dès que vous imprimez, exportez en PDF ou affichez un plan en grand.</dd>
-          <dt>Le PDF ne se télécharge pas.</dt><dd>Dans l’aperçu de claude.ai, les téléchargements sont bloqués : utilisez la version en ligne, ou <b>Impression</b> puis « Enregistrer en PDF ».</dd>
+          <dt>Le PDF ne se télécharge pas.</dt><dd>Regardez d’abord dans le dossier Téléchargements : le fichier s’y enregistre souvent sans fenêtre de confirmation. Si le navigateur bloque le téléchargement, autorisez-le (icône dans la barre d’adresse), ou utilisez <b>Impression</b> puis « Enregistrer en PDF » comme imprimante.</dd>
           <dt>Les élèves remarquent qu’un camarade ne bouge jamais.</dt><dd>C’est l’effet du cadenas : retirez-le avant de mélanger devant la classe.</dd>
           <dt>Comment partager l’application avec un collègue ?</dt><dd>Envoyez-lui le fichier HTML : il s’ouvre par un double-clic, sans installation ni compte. Sur la version en ligne, le bouton <b>Télécharger l’application</b>, en haut, enregistre ce fichier.</dd>
         </dl>
@@ -3369,7 +3369,7 @@ function exportPdf(){
     a.href=url;a.download=nm;document.body.appendChild(a);a.click();a.remove();
     setTimeout(function(){URL.revokeObjectURL(url)},4000);
     recordUsed('pdf');
-    flash(framed?'PDF créé. Si le téléchargement ne démarre pas (aperçu dans claude.ai), utilisez la version en ligne ou l’Impression.':'PDF « '+nm+' » enregistré (souvent dans Téléchargements).');
+    flash('PDF « '+nm+' » enregistré (souvent dans Téléchargements). S’il n’apparaît pas, utilisez Impression puis « Enregistrer en PDF ».');
   }catch(err){flash('L’export en PDF n’a pas fonctionné ici : utilisez l’Impression, puis « Enregistrer en PDF ».')}
 }
 
