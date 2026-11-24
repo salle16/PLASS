@@ -151,10 +151,6 @@ textarea{width:100%;resize:vertical}
 .save-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;padding:10px 14px;
   background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--star);border-radius:12px;font-size:.92rem}
 .save-actions{display:flex;gap:8px;flex-wrap:wrap}
-/* Bandeau de déménagement (ancienne adresse seulement). */
-.move-bar{background:#E8F1FB;border-color:#3F86C6;border-left-color:#3F86C6}
-.move-bar a{color:#1F5FA0;font-weight:700}
-.move-bar a.btn{text-decoration:none;font-weight:600}
 .help-btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .lhb[aria-pressed="true"],.lhb[aria-pressed="true"]:hover{background:var(--accent);color:var(--on-accent)}
 .seat .mark.lhm{top:auto;right:auto;bottom:3px;left:3px;color:var(--desk-accent)}
@@ -274,9 +270,15 @@ textarea{width:100%;resize:vertical}
 .tnbox.tilted .tnum{transform:translate(-8px,calc(-100% + 3px))}
 .present .tnum{max-width:none;padding:.3vmin 1vmin;font-size:max(.75rem,1.9vmin);border-width:max(2px,.3vmin)}
 .tname-tools{gap:8px 10px}
-.tname-tools input{width:11em;font:inherit;font-size:.9rem;padding:5px 8px}
+.tname-tools input{width:10em;font:inherit;font-size:.9rem;padding:5px 8px}
 .tname-tools input:disabled{opacity:.45}
-.tname-tools .hint{flex-basis:100%}
+/* Autres éléments à poser (menu déroulant de la palette) */
+.pal-more{font:600 .85rem var(--font-body);padding:7px 10px;cursor:pointer;max-width:15em}
+.pal-more.on{background:var(--accent-soft);border-color:var(--accent)}
+/* Déplacement d'une table : la table reste en place, un cadre montre où elle sera posée (rouge si la place est prise). */
+.tbl.dragging{opacity:.5}
+.dropgh{position:relative;z-index:6;pointer-events:none;border:3px dashed var(--accent);border-radius:8px;background:rgba(45,85,200,.12);min-width:0;min-height:0}
+.dropgh.bad{border-color:var(--warn);background:rgba(160,71,22,.12)}
 
 /* Affichage en grand pour les élèves */
 .present{position:fixed;inset:0;z-index:50;background:var(--floor);display:flex;flex-direction:column;padding:2vmin 2.5vmin}
@@ -464,15 +466,6 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
     <button class="btn primary" id="btnDemoExit" type="button">Revenir à mes classes</button>
   </div>
 
-  <div class="save-bar move-bar" id="moveBar" role="status" hidden>
-    <span id="moveBarText"></span>
-    <span class="save-actions">
-      <button class="btn primary" id="moveSave" type="button">1. Enregistrer ma sauvegarde</button>
-      <a class="btn" id="moveGo" href="#" target="_blank" rel="noopener">2. Aller à la nouvelle adresse</a>
-      <button class="btn" id="moveLaterBtn" type="button">Plus tard</button>
-    </span>
-  </div>
-
   <div class="save-bar" id="saveBar" role="status" hidden>
     <span id="saveBarText"></span>
     <span class="save-actions">
@@ -500,7 +493,7 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
         <div class="chips" id="seated"></div>
       </div>
       <div>
-        <div class="list-title"><span class="lt">Qui à côté de qui<span class="info-wrap"><button class="info" type="button" aria-expanded="false" aria-controls="tipRules" aria-label="Aide : consignes du mélange">i</button><span class="tip" id="tipRules" role="tooltip">Lors d'un mélange : le menu à côté du nom place l'élève devant (premières rangées), au fond (derniers rangs), près d'une fenêtre ou près du bureau du prof, le cadenas le garde à sa place, « pas à côté de » éloigne les deux élèves (ni côte à côte, ni devant, ni derrière, ni en diagonale), « pas à la même table » les met à des tables ou îlots différents et « à côté de » les assoit côte à côte (sur la même table, sur des tables qui se touchent, ou de part et d’autre d’un angle, par exemple entre un côté et le fond d’un U). Avec l’alternance cochée, le mélange assoit côte à côte un « oui » et un « non », autant que la salle le permet ; les règles « qui à côté de qui » restent prioritaires. <b>Places vides :</b> toutes les places libres montrent un fantôme. Pour imposer une place vide à côté d’un élève (ou loin de lui), choisissez « Fantôme (place vide) » comme second élève : un fantôme est créé pour cette règle, et retiré si vous supprimez la règle. <b>Gauchers :</b> la main à côté du nom indique un gaucher ; au mélange il va d’abord sur une place pour gaucher (onglet Salle), et jamais juste à droite d’un droitier si c’est évitable.</span></span></span><span id="countAp"></span></div>
+        <div class="list-title"><span class="lt">Qui à côté de qui<span class="info-wrap"><button class="info" type="button" aria-expanded="false" aria-controls="tipRules" aria-label="Aide : consignes du mélange">i</button><span class="tip" id="tipRules" role="tooltip">Lors d'un mélange : le menu à côté du nom place l'élève devant (premières rangées), au fond (derniers rangs), près d'une fenêtre ou près du bureau du prof, le cadenas le garde à sa place, « pas à côté de » éloigne les deux élèves : ils sont voisins dès qu’aucun élève n’est assis entre eux, côte à côte, devant, derrière ou en diagonale (une place vide ou une allée ne les sépare pas), « pas à la même table » les met à des tables ou îlots différents et « à côté de » les assoit côte à côte (sur la même table, sur des tables qui se touchent, ou de part et d’autre d’un angle, par exemple entre un côté et le fond d’un U). Avec l’alternance cochée, le mélange assoit côte à côte un « oui » et un « non », autant que la salle le permet ; les règles « qui à côté de qui » restent prioritaires. <b>Places vides :</b> toutes les places libres montrent un fantôme. Pour imposer une place vide à côté d’un élève (ou loin de lui), choisissez « Fantôme (place vide) » comme second élève : un fantôme est créé pour cette règle, et retiré si vous supprimez la règle. <b>Gauchers :</b> la main à côté du nom indique un gaucher ; au mélange il va d’abord sur une place pour gaucher (onglet Salle), et jamais juste à droite d’un droitier si c’est évitable. <b>Par salle :</b> ces règles et les places souhaitées sont propres à la salle ouverte ; la même classe peut en avoir d’autres dans une autre salle.</span></span></span><span id="countAp"></span></div>
         <div class="apart-form">
           <label class="sr" for="ruleA">Premier élève</label>
           <select id="ruleA"></select>
@@ -515,6 +508,7 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
           <button class="btn" id="btnRule" type="button">Ajouter la règle</button>
         </div>
         <ul class="apart-list" id="apartList"></ul>
+        <p class="hint" id="ruleRoom" style="margin-top:6px"></p>
       </div>
       <div>
         <div class="list-title"><span class="lt">Critère<span class="info-wrap"><button class="info" type="button" aria-expanded="false" aria-controls="tipCrit" aria-label="Aide : critère oui / non">i</button><span class="tip" id="tipCrit" role="tooltip">Nom du critère (ex. Bavard, Fille, Garçon). Cliquez ensuite sur la lettre à côté du nom de chaque élève concerné. Cochez « alterner » pour que le mélange asseye côte à côte un « oui » et un « non » (un bavard avec un calme, une fille avec un garçon), autant que la salle le permet ; les règles « qui à côté de qui » restent prioritaires.</span></span></span><span id="countTag"></span></div>
@@ -610,11 +604,9 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
               <option value="bus">En autobus</option>
               <option value="empty">Vider la salle</option>
             </select>
-          </div>
-          <div class="group tname-tools"><label class="tools-label" for="tnameEdit">Nom de la table</label>
-            <input type="text" id="tnameEdit" maxlength="24" placeholder="ex. Équipe 1" autocomplete="off" title="Cliquez sur une table, puis tapez son nom (Entrée pour valider). Laissez vide pour retirer le nom.">
-            <button class="btn" id="btnTnClear" type="button" title="Retire les noms de toutes les tables, pour cette classe seulement">Effacer les noms</button>
-            <span class="hint">Pour le travail en groupe. Les noms sont propres à la classe ouverte : chaque classe de la salle a les siens.</span>
+            <span class="tname-tools group"><label class="tools-label" for="tnameEdit">Nom de la table</label>
+            <input type="text" id="tnameEdit" maxlength="24" placeholder="ex. Équipe 1" autocomplete="off" title="Pour le travail en groupe : cliquez sur une table, puis tapez son nom (Entrée pour valider). Laissez vide pour retirer le nom. Les noms sont propres à la classe ouverte.">
+            <button class="btn" id="btnTnClear" type="button" title="Retire les noms de toutes les tables, pour cette classe seulement">Effacer les noms</button></span>
           </div>
           <div class="group"><span class="tools-label">Taille</span>
             <span class="stepper"><span>Colonnes</span>
@@ -722,6 +714,7 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
           <li><b>Salle</b> : la liste de vos salles. Choisir une salle y installe la classe ouverte, et les élèves sont replacés dans l’ordre. « + Nouvelle salle » en crée une et ouvre l’onglet Salle pour disposer les tables.</li>
           <li>Le <b>crayon</b> renomme, la <b>corbeille</b> supprime (cliquez deux fois pour confirmer).</li>
           <li>Une salle sert à toutes les classes qui y ont cours : si vous déplacez une table, elle bouge pour toutes ces classes. Chaque classe garde ses élèves et ses places.</li>
+          <li>Une même classe peut avoir des <b>règles différentes selon la salle</b> (« qui à côté de qui » et places souhaitées). La première fois qu’elle va dans une salle, elle y reprend les règles de la salle précédente ; ce que vous changez ensuite ne vaut que pour cette salle. En revenant dans l’ancienne salle, vous retrouvez ses règles.</li>
           <li>Une salle encore utilisée par une autre classe ne peut pas être supprimée.</li>
         </ul>
       </section>
@@ -730,9 +723,9 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
         <ul>
           <li><b>À la main</b> : un nom par ligne, ou séparés par des virgules, puis <b>Ajouter à la liste</b> (ou Ctrl + Entrée).</li>
           <li><b>Depuis Pronote ou un tableur</b> : <b>Importer une liste…</b> lit les fichiers .csv, .xlsx et .ods. Vous pouvez aussi coller des lignes copiées depuis Pronote ou Excel dans la case.</li>
-          <li>Une fenêtre montre les colonnes trouvées (nom, prénom, classe) : corrigez-les si besoin et vérifiez l’aperçu.</li>
+          <li>Une fenêtre montre les colonnes trouvées (nom, prénom) : corrigez-les si besoin et vérifiez l’aperçu.</li>
           <li>Choisissez l’affichage des noms : prénom seul (l’initiale du nom est ajoutée quand deux prénoms sont identiques), prénom et initiale, prénom et nom, ou NOM et prénom.</li>
-          <li>Si le fichier contient plusieurs classes, importez-en une seule, ou créez une classe pour chacune d’un coup.</li>
+          <li>La liste est prise telle quelle, dans la classe ouverte : une colonne « Classe » éventuelle est ignorée. Un groupe d’élèves issus de plusieurs classes (option, demi-groupe…) est donc importé en entier.</li>
           <li>Les élèves déjà dans la liste sont ignorés. Cochez « Remplacer » pour repartir de zéro.</li>
           <li>Les anciens fichiers .xls ne sont pas lus : enregistrez-les en .xlsx ou en .csv.</li>
         </ul>
@@ -757,11 +750,12 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
           <li><b>Main</b> à côté du nom : l’élève est gaucher (une petite main le rappelle sur sa place). Au mélange, les gauchers vont d’abord sur les <b>places pour gauchers</b> (voir l’onglet Salle) ; un droitier n’en prend une que s’il ne reste plus d’autre place pour lui. Le mélange évite aussi de mettre un gaucher juste à droite d’un droitier, pour que leurs coudes ne se gênent pas en écrivant (gauche et droite vues depuis la place de l’élève).</li>
           <li><b>Qui à côté de qui</b> : choisissez deux élèves et le type de règle :
             <ul>
-              <li><b>pas à côté de</b> : ni côte à côte, ni devant, ni derrière, ni en diagonale ;</li>
+              <li><b>pas à côté de</b> : deux élèves sont voisins dès qu’aucun élève n’est assis entre eux, côte à côte, devant, derrière ou en diagonale. Une place vide ou une allée ne les sépare pas : il faut un autre élève entre eux (ou plus de 3 cases d’écart) ;</li>
               <li><b>pas à la même table / îlot que</b> : à des tables ou îlots différents ;</li>
               <li><b>à côté de</b> : assis côte à côte, y compris sur une table posée en long ou de part et d’autre d’un angle (le bout d’un côté du U et le début du fond) ; deux voisins au plus par élève.</li>
             </ul>
           </li>
+          <li>Règles et places souhaitées sont <b>propres à la salle ouverte</b> : la même classe peut en avoir d’autres dans une autre salle (voir « Classes et salles »).</li>
           <li>Une règle non respectée est signalée en orange dans la liste. Si le mélange n’arrive pas à tout respecter, ajoutez ou espacez des tables, ou assouplissez une règle.</li>
         </ul>
       </section>
@@ -788,13 +782,13 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
       <section id="h-room">
         <h3>Disposer la salle (onglet Salle)</h3>
         <ul>
-          <li><b>Poser</b> : choisissez un élément (table seule, à deux, à trois, îlot de 4 ou de 6, bureau du prof, paillasse du prof, meuble), puis cliquez dans la salle. La paillasse fait 4 cases de long ; pivotez-la pour la mettre le long d’un mur.</li>
-          <li><b>Place gaucher</b> : choisissez cet outil puis cliquez sur les places équipées pour les gauchers (chaise ou tablette à gauche) ; recliquez pour enlever la marque. Une petite tablette violette les signale, aussi en affichage en grand et à l’impression. Comme les tables, ces places valent pour toutes les classes de la salle.</li>
-          <li><b>Portes et fenêtres</b> : choisissez Porte ou Fenêtre, puis cliquez directement sur le bord de la salle, à l’endroit voulu : elle se pose sur le mur le plus proche du clic (trait marron pour une porte, bleu clair pour une fenêtre). Glissez-la le long d’un mur ou vers un autre mur ; « Plus longue / Plus courte » règle sa taille.</li>
-          <li><b>Déplacer</b> : glissez une table, ou sélectionnez-la et utilisez les flèches du clavier.</li>
+          <li><b>Poser</b> : choisissez une table seule, à deux ou un îlot de 4 (boutons), ou un autre élément dans le menu <b>Autres éléments…</b> (table à trois, îlot de 6, bureau du prof, paillasse du prof, meuble, porte, fenêtre, place gaucher), puis cliquez dans la salle. La paillasse fait 4 cases de long ; pivotez-la pour la mettre le long d’un mur.</li>
+          <li><b>Place gaucher</b> (menu Autres éléments) : choisissez cet outil puis cliquez sur les places équipées pour les gauchers (chaise ou tablette à gauche) ; recliquez pour enlever la marque. Une petite tablette violette les signale, aussi en affichage en grand et à l’impression. Comme les tables, ces places valent pour toutes les classes de la salle.</li>
+          <li><b>Portes et fenêtres</b> : choisissez Porte ou Fenêtre dans le menu Autres éléments, puis cliquez directement sur le bord de la salle, à l’endroit voulu : elle se pose sur le mur le plus proche du clic (trait marron pour une porte, bleu clair pour une fenêtre). Glissez-la le long d’un mur ou vers un autre mur ; « Plus longue / Plus courte » règle sa taille.</li>
+          <li><b>Déplacer</b> : glissez une table. Pendant le glissement, la table reste en place et un cadre en pointillés montre exactement où elle sera posée ; s’il est rouge, la place est prise et la table ne bouge pas. Vous pouvez aussi la sélectionner et utiliser les flèches du clavier.</li>
           <li><b>Élément choisi</b> : pivoter, incliner par pas de 15° (jusqu’à 45°), redresser, dupliquer, retirer.</li>
           <li><b>Modèle</b> (menu déroulant) : binômes, tables à trois, tables seules, îlots de 4, en épi, en U, en autobus, ou vider la salle. Il remplace les tables de la salle ; les élèves déjà placés reprennent les nouvelles places dans l’ordre. En cas d’erreur, <b>Annuler l’action</b>.</li>
-          <li><b>Nom de la table</b> (travail en groupe) : cliquez sur une table où s’assoient des élèves (seule, à deux, à trois, îlot de 4 ou de 6), puis tapez son nom dans la case <b>Nom de la table</b> et validez avec Entrée (24 caractères au plus, par exemple « Équipe 1 » ou « Les Lynx »). Le nom s’affiche sur le coin de la table. Laissez la case vide pour retirer le nom ; <b>Effacer les noms</b> les retire tous. Contrairement aux tables elles-mêmes, les noms sont <b>propres à chaque classe</b> : deux classes qui partagent la salle ont chacune leurs noms d’équipes. Ils ne comptent pas dans le mélange.</li>
+          <li><b>Nom de la table</b> (travail en groupe) : cliquez sur une table où s’assoient des élèves (seule, à deux, à trois, îlot de 4 ou de 6), puis tapez son nom dans la case <b>Nom de la table</b> (à droite du menu Modèle) et validez avec Entrée (24 caractères au plus, par exemple « Équipe 1 » ou « Les Lynx »). Le nom s’affiche sur le coin de la table. Laissez la case vide pour retirer le nom ; <b>Effacer les noms</b> les retire tous. Contrairement aux tables elles-mêmes, les noms sont <b>propres à chaque classe</b> : deux classes qui partagent la salle ont chacune leurs noms d’équipes. Ils ne comptent pas dans le mélange.</li>
           <li><b>Taille</b> : nombre de colonnes et de rangées.</li>
           <li>Les petites <b>chaises</b> montrent où s’assoient les élèves ; leur trait foncé est le dossier.</li>
         </ul>
@@ -845,7 +839,7 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
           <dt>Mes classes ont disparu.</dt><dd>Vous êtes sans doute sur un autre ordinateur ou un autre navigateur, ou l’historique du navigateur a été effacé. Ouvrez votre dernière sauvegarde.</dd>
           <dt>« Il manque des places ».</dt><dd>Il y a plus d’élèves que de places : ajoutez des tables dans l’onglet Salle.</dd>
           <dt>Une règle reste « pas respectée ».</dt><dd>La salle ne permet pas de tout respecter. Espacez les tables, ajoutez-en, ou retirez une règle.</dd>
-          <dt>Où est passée la porte ?</dt><dd>Elle se pose maintenant le long d’un mur, comme les fenêtres : onglet Salle, bouton Porte, puis cliquez près du mur. Les anciennes portes carrées des salles existantes restent affichées ; vous pouvez les retirer.</dd>
+          <dt>Où est passée la porte ?</dt><dd>Elle se pose maintenant le long d’un mur, comme les fenêtres : onglet Salle, menu Autres éléments → Porte, puis cliquez près du mur. Les anciennes portes carrées des salles existantes restent affichées ; vous pouvez les retirer.</dd>
           <dt>Un élève « Bureau » n’est pas près du bureau.</dt><dd>Le choix ne compte que si la salle contient un bureau ou une paillasse du prof. Il s’applique au prochain Mélanger ; les règles « qui à côté de qui » passent avant.</dd>
           <dt>Comment revoir la classe d’exemple ?</dt><dd>Bouton <b>Voir l’exemple</b>, en haut. L’exemple s’affiche à la place de vos classes, que vous pouvez essayer librement : rien n’est enregistré. <b>Revenir à mes classes</b> (ou recharger la page) vous ramène à vos classes, intactes.</dd>
           <dt>Les élèves se retrouvent souvent avec les mêmes voisins.</dt><dd>Cochez <b>Changer de voisins</b> dans le panneau de gauche. Il faut au moins un plan dans l’historique : il s’en ajoute un dès que vous imprimez, exportez en PDF ou affichez un plan en grand.</dd>
@@ -878,13 +872,8 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
     <div class="imp-grid">
       <label for="impName">Colonne du nom</label><select id="impName"></select>
       <label for="impFirst">Colonne du prénom</label><select id="impFirst"></select>
-      <label for="impClassCol">Colonne de la classe</label><select id="impClassCol"></select>
     </div>
-    <fieldset id="impClassBox" hidden>
-      <legend>Plusieurs classes dans la liste</legend>
-      <label><input type="radio" name="impMode" value="one" checked> Importer dans cette classe : <select id="impClass" aria-label="Classe à importer"></select></label>
-      <label><input type="radio" name="impMode" value="split"> <span id="impSplitLabel">Créer une classe pour chacune</span></label>
-    </fieldset>
+    <p class="hint">Toute la liste va dans la classe ouverte, telle quelle : une éventuelle colonne « Classe » est ignorée (pratique pour un groupe d’élèves issus de plusieurs classes).</p>
     <fieldset>
       <legend>Noms affichés sur le plan</legend>
       <label><input type="radio" name="impFmt" value="first" checked> Prénom (avec l’initiale du nom si deux élèves ont le même prénom)</label>
@@ -911,8 +900,6 @@ try{PAGE_SRC='<!doctype html>\n'+document.documentElement.outerHTML}catch(e){}
 var KEY='plans-de-classe-v1';
 var GAPX=10,GAPY=14,MAXCOLS=16,MAXROWS=10;
 var HOUR=3600000,DAY=86400000,HISTMAX=20;
-/* Déménagement : nouvelle adresse de l'application ('' = pas de bandeau). Le bandeau ne s'affiche qu'en ligne, ailleurs qu'à cette adresse. */
-var NEW_URL='https://plass-cgr.pages.dev/',moveLater=false;
 var $=function(id){return document.getElementById(id)};
 var uid=function(){return Math.random().toString(36).slice(2,9)};
 var clamp=function(n,a,b){return Math.max(a,Math.min(b,n))};
@@ -956,7 +943,7 @@ var KINDS={
   cupboard:{w:2,h:1,label:'Meuble',face:false,seats:0}
 };
 /* L'ancienne porte carrée n'est plus proposée (remplacée par la porte le long d'un mur) ; celles des plans existants restent affichées. */
-var KIND_ORDER=['single','pair','trio','island4','island6','teacher','bench','cupboard'];
+var KIND_ORDER=['single','pair','island4'];
 /* Bureau et paillasse du prof : un seul de chaque par salle ; ils servent de repère pour « près du bureau ». */
 function isProf(kind){return kind==='teacher'||kind==='bench'}
 function V(){return state.view==='teacher'}
@@ -1082,7 +1069,7 @@ function makeTables(type,cols,rows){
 function makePlan(name,cols,rows,type,names,roomId){
   return {id:uid(),name:name,roomId:roomId||'',cols:cols,rows:rows,tables:makeTables(type,cols,rows),
     students:names.map(function(n){return newStudent(n)}),seats:{},apart:[],together:[],apartTable:[],
-    crit:{label:'Bavard',mix:false},walls:[],rot:{on:false,depth:1},history:[],tnames:{}};
+    crit:{label:'Bavard',mix:false},walls:[],rot:{on:false,depth:1},history:[],tnames:{},byRoom:{}};
 }
 function newStudent(n){return {id:uid(),name:n,front:false,pref:'',lock:false,tag:false,left:false}}
 /* Nouveau plan (une classe) dans une salle enregistrée. */
@@ -1149,6 +1136,23 @@ function normalize(p,keepId){
     return out;
   };
   var together=pairsOf(p.together),apartTable=pairsOf(p.apartTable);
+  /* Règles et places souhaitées de cette classe dans ses autres salles (celles de la salle actuelle sont dans apart, together…). */
+  var realIds={};students.forEach(function(s){if(!s.ghost)realIds[s.id]=1});
+  var byRoom={};
+  if(p.byRoom&&typeof p.byRoom==='object')Object.keys(p.byRoom).forEach(function(rid){
+    var b=p.byRoom[rid];if(!b||typeof b!=='object'||rid===p.roomId)return;
+    var gh=(Array.isArray(b.ghosts)?b.ghosts:[]).filter(function(g){return typeof g==='string'}),ok={};
+    Object.keys(realIds).forEach(function(i){ok[i]=1});gh.forEach(function(g){ok[g]=1});
+    var sn={},pr=function(list){var out=[];(Array.isArray(list)?list:[]).forEach(function(a){
+      if(!Array.isArray(a)||a.length!==2||a[0]===a[1]||!ok[a[0]]||!ok[a[1]])return;
+      var k=a.slice().sort().join('|');if(sn[k])return;sn[k]=1;out.push([a[0],a[1]])});return out};
+    var ap=[];(Array.isArray(b.apart)?b.apart:[]).forEach(function(g){if(!Array.isArray(g))return;var x=[];g.forEach(function(id){if(ok[id]&&x.indexOf(id)<0)x.push(id)});if(x.length>1)ap.push(x)});
+    var e={apart:ap,together:pr(b.together),apartTable:pr(b.apartTable),prefs:{},ghosts:[]};
+    if(b.prefs&&typeof b.prefs==='object')Object.keys(b.prefs).forEach(function(id){if(realIds[id]&&PREFS.indexOf(b.prefs[id])>0)e.prefs[id]=b.prefs[id]});
+    var used={};e.apart.concat(e.together,e.apartTable).forEach(function(g){g.forEach(function(id){used[id]=1})});
+    e.ghosts=gh.filter(function(g,i){return used[g]&&gh.indexOf(g)===i});
+    byRoom[rid]=e;
+  });
   /* Fantômes sans règle ni cadenas : inutiles, retirés (toute place libre montre déjà un fantôme). */
   var inRule={};apart.concat(together,apartTable).forEach(function(g){g.forEach(function(id){inRule[id]=1})});
   students=students.filter(function(s){return !s.ghost||s.lock||inRule[s.id]});
@@ -1168,7 +1172,7 @@ function normalize(p,keepId){
   return {id:keepId&&typeof p.id==='string'?p.id:uid(),name:String(p.name).slice(0,60),
     roomId:typeof p.roomId==='string'?p.roomId:'',roomName:typeof p.roomName==='string'?p.roomName.slice(0,60):'',demo:p.demo===true?true:undefined,
     cols:cols,rows:rows,tables:tables,students:students,seats:seats,apart:apart,together:together,apartTable:apartTable,
-    crit:crit,walls:normWalls(p.walls,cols,rows),rot:rot,history:history,tnames:tnames,seatedAt:typeof p.seatedAt==='number'?p.seatedAt:undefined};
+    crit:crit,walls:normWalls(p.walls,cols,rows),rot:rot,history:history,tnames:tnames,byRoom:byRoom,seatedAt:typeof p.seatedAt==='number'?p.seatedAt:undefined};
 }
 /* Salle enregistrée : un nom et une disposition de tables, utilisable par plusieurs classes. */
 function normalizeRoom(r){
@@ -1191,6 +1195,31 @@ function applyLayout(p,r,reseatAll){
   Object.keys(p.seats).forEach(function(k){if(valid[k]){kept[k]=p.seats[k];n++}});
   if(before.length&&(!n||reseatAll&&n<before.length))reseat(p,before);else p.seats=kept;
   fixLocks(p);
+}
+/* Règles par salle : une classe peut avoir d'autres règles « qui à côté de qui » et d'autres places souhaitées dans une autre salle.
+   En changeant de salle, celles de la salle quittée sont rangées dans p.byRoom (avec leurs fantômes) ; celles de la salle d'arrivée
+   sont reprises si elles existent, sinon la classe garde une copie des règles actuelles, modifiable ensuite pour cette salle seulement.
+   Renvoie true si des règles propres à la salle d'arrivée ont été reprises. */
+function moveClassTo(p,r,reseatAll){
+  var had=false;
+  if(p.roomId&&p.roomId!==r.id){
+    var pm={};p.students.forEach(function(s){if(!s.ghost&&s.pref)pm[s.id]=s.pref});
+    p.byRoom=p.byRoom||{};
+    p.byRoom[p.roomId]=JSON.parse(JSON.stringify({apart:p.apart,together:p.together,apartTable:p.apartTable,prefs:pm,ghosts:ghosts(p).map(function(g){return g.id})}));
+    var b=p.byRoom[r.id];
+    if(b){
+      had=true;
+      ghosts(p).forEach(function(g){var k=seatOf(p,g.id);if(k)delete p.seats[k]});
+      p.students=p.students.filter(function(s){return !s.ghost});
+      (b.ghosts||[]).forEach(function(id){var g=newGhost();g.id=id;p.students.push(g)});
+      p.apart=b.apart||[];p.together=b.together||[];p.apartTable=b.apartTable||[];
+      p.students.forEach(function(s){if(s.ghost)return;var v=(b.prefs||{})[s.id]||'';s.pref=v;s.front=v==='front'});
+      delete p.byRoom[r.id];
+    }
+  }
+  p.roomId=r.id;
+  applyLayout(p,r,reseatAll);
+  return had;
 }
 /* Chaque plan a une salle enregistrée ; les anciens plans reçoivent la leur. Les salles font foi pour les tables. */
 function ensureRooms(st){
@@ -1310,7 +1339,30 @@ function apartPairs(p){
   });
   return out;
 }
-function near(x,y){return x&&y&&Math.abs(x.r-y.r)<=1&&Math.abs(x.c-y.c)<=1}
+/* « Pas à côté de » : deux élèves sont voisins dès qu'aucun élève n'est assis entre eux, côte à côte, devant, derrière ou en diagonale.
+   Une place vide (ou un fantôme) ou une allée ne les sépare donc pas. Au-delà de NBMAX cases, ils ne sont plus voisins.
+   betweenOf(slots) renvoie une fonction (a, b) → liste des places situées entre a et b (null si trop loin). */
+var NBMAX=3;
+function betweenOf(slots){
+  var cache={};
+  return function(a,b){
+    if(!a||!b||a===b)return null;
+    var k=a.key<b.key?a.key+'|'+b.key:b.key+'|'+a.key;
+    if(Object.prototype.hasOwnProperty.call(cache,k))return cache[k];
+    var dc=b.c-a.c,dr=b.r-a.r,res=null;
+    if(Math.max(Math.abs(dc),Math.abs(dr))<=NBMAX){
+      var L=Math.sqrt(dc*dc+dr*dr),c0=Math.min(a.c,b.c),c1=Math.max(a.c,b.c),r0=Math.min(a.r,b.r),r1=Math.max(a.r,b.r);
+      res=[];
+      slots.forEach(function(s){
+        if(s.key===a.key||s.key===b.key||s.c<c0||s.c>c1||s.r<r0||s.r>r1)return;
+        if(Math.abs((s.c-a.c)*dr-(s.r-a.r)*dc)/L<.5)res.push(s.key);
+      });
+    }
+    return (cache[k]=res);
+  };
+}
+/* hasPupil(clé de place) : un vrai élève (pas un fantôme) y est assis. */
+function nbClose(between,a,b,hasPupil){var w=between(a,b);return !!w&&w.every(function(k){return !hasPupil(k)})}
 /* Côte à côte : voisins directs sur la même rangée, voisins sur une même table posée en long (tournée d'un quart de tour),
    ou voisins d'angle (côté et fond d'un U). */
 function side(x,y){return !!(x&&y&&((x.r===y.r&&Math.abs(x.c-y.c)===1)||(x.v&&x.tid===y.tid&&x.c===y.c&&Math.abs(x.r-y.r)===1)||(x.cn&&x.cn[y.key])))}
@@ -1321,9 +1373,10 @@ function ruleIssues(p,seats){
   seats=seats||p.seats;
   var ap=apartPairs(p),tg=p.together||[],tb=p.apartTable||[];
   if(!ap.length&&!tg.length&&!tb.length)return {apart:[],together:[],table:[],n:0};
-  var pos={};
-  seatSlots(p).forEach(function(s){var sid=seats[s.key];if(sid)pos[sid]=s});
-  var a=ap.filter(function(x){return near(pos[x[0]],pos[x[1]])});
+  var pos={},sl=seatSlots(p),between=betweenOf(sl);
+  sl.forEach(function(s){var sid=seats[s.key];if(sid)pos[sid]=s});
+  var hasPupil=function(k){var st=seats[k]&&byId(p,seats[k]);return !!st&&!st.ghost};
+  var a=ap.filter(function(x){return nbClose(between,pos[x[0]],pos[x[1]],hasPupil)});
   var t=tg.filter(function(x){return !side(pos[x[0]],pos[x[1]])});
   var b=tb.filter(function(x){return sameTable(pos[x[0]],pos[x[1]])});
   return {apart:a,together:t,table:b,n:a.length+t.length+b.length};
@@ -1331,7 +1384,7 @@ function ruleIssues(p,seats){
 /* Mélange ou ordre alphabétique. Les élèves avec un cadenas gardent leur place.
    Renvoie le nombre de paires à séparer qui restent voisines. */
 function autoSeat(p,mode){
-  var slots=seatSlots(p),bykey={},fixed={},keep={};
+  var slots=seatSlots(p),bykey={},fixed={},keep={},between=betweenOf(slots);
   slots.forEach(function(s){bykey[s.key]=s});
   p.students.forEach(function(s){
     if(!s.lock)return;
@@ -1445,8 +1498,8 @@ function autoSeat(p,mode){
     };
     var count=function(seats){
       var pos={};for(var k in seats)pos[seats[k]]=bykey[k];
-      var n=0;
-      pairs.forEach(function(a){if(near(pos[a[0]],pos[a[1]]))n++});
+      var n=0,hp=function(k){var x=seats[k];return !!x&&!isGhost[x]};
+      pairs.forEach(function(a){if(nbClose(between,pos[a[0]],pos[a[1]],hp))n++});
       tog.forEach(function(a){if(!side(pos[a[0]],pos[a[1]]))n++});
       tabs.forEach(function(a){if(sameTable(pos[a[0]],pos[a[1]]))n++});
       var sb=softBad(seats),soft=0;sb.forEach(function(b){soft+=b.w});
@@ -1464,8 +1517,8 @@ function autoSeat(p,mode){
       for(var it=0;it<4000&&v&&still<600;it++){
         still++;
         var pos={};for(var k in seats)pos[seats[k]]=k;
-        var bad=[],k1,k2;
-        pairs.forEach(function(a){if(near(bykey[pos[a[0]]],bykey[pos[a[1]]]))bad.push({a:a,t:0})});
+        var bad=[],k1,k2,hp2=function(k){var x=seats[k];return !!x&&!isGhost[x]};
+        pairs.forEach(function(a){if(nbClose(between,bykey[pos[a[0]]],bykey[pos[a[1]]],hp2))bad.push({a:a,t:0})});
         tog.forEach(function(a){if(!side(bykey[pos[a[0]]],bykey[pos[a[1]]]))bad.push({a:a,t:1})});
         tabs.forEach(function(a){if(sameTable(bykey[pos[a[0]]],bykey[pos[a[1]]]))bad.push({a:a,t:2})});
         if(bad.length){
@@ -1676,6 +1729,11 @@ function dropStudent(p,id){
   p.together=p.together.filter(function(a){return a[0]!==id&&a[1]!==id});
   p.apartTable=p.apartTable.filter(function(a){return a[0]!==id&&a[1]!==id});
   var k=seatOf(p,id);if(k)delete p.seats[k];
+  Object.keys(p.byRoom||{}).forEach(function(rid){
+    var b=p.byRoom[rid],nf=function(a){return a[0]!==id&&a[1]!==id};
+    b.apart=b.apart.map(function(g){return g.filter(function(x){return x!==id})}).filter(function(g){return g.length>1});
+    b.together=b.together.filter(nf);b.apartTable=b.apartTable.filter(nf);if(b.prefs)delete b.prefs[id];
+  });
 }
 function removeStudent(id){mutate(function(p){dropStudent(p,id)})}
 function toggleTag(id){mutate(function(p){var s=byId(p,id);if(s&&!s.ghost)s.tag=!s.tag})}
@@ -1993,6 +2051,8 @@ function renderApart(p){
       '<button class="icon-btn" type="button" data-rule="apart:'+i+'" aria-label="Supprimer cette règle">'+ICON_X+'</button></li>');
   });
   $('countAp').textContent=items.length||'';
+  var rm=roomOf(p),others=Object.keys(p.byRoom||{}).map(function(id){var x=state.rooms.filter(function(y){return y.id===id})[0];return x&&x.name}).filter(Boolean);
+  $('ruleRoom').textContent='Règles et places souhaitées de cette classe en « '+(rm?rm.name:'')+' ». Dans une autre salle, elle peut en avoir d’autres'+(others.length?' (déjà définies : '+others.join(', ')+')':'')+'.';
   $('apartList').innerHTML=items.length?items.join(''):'<li class="empty">Aucune règle pour l’instant.</li>';
 }
 function glyph(kind){
@@ -2003,12 +2063,16 @@ function glyph(kind){
   }}
   return h+'</svg>';
 }
+/* Palette : les trois tables les plus courantes en boutons, tout le reste dans un menu déroulant (gain de place). */
+var MORE_TOOLS=[['Tables',['trio','island6']],['Prof et mobilier',['teacher','bench','cupboard']],['Murs',['wdoor','wwindow']],['Places',['lhseat']]];
+function toolLabel(k){return k==='lhseat'?'Place gaucher':WALLK[k]?WALLK[k].label:KINDS[k].label}
 function buildPalette(){
   $('palette').innerHTML=KIND_ORDER.map(function(k){
     return '<button class="btn" type="button" data-kind="'+k+'" aria-pressed="false">'+glyph(k)+KINDS[k].label+'</button>';
-  }).join('')+Object.keys(WALLK).map(function(k){
-    return '<button class="btn" type="button" data-kind="'+k+'" aria-pressed="false">'+WALLK[k].glyph+WALLK[k].label+'</button>';
-  }).join('')+'<button class="btn" type="button" data-kind="lhseat" aria-pressed="false" title="Cliquez ensuite sur les places équipées pour les gauchers (chaise à tablette gauche…)">'+LH_SEAT.replace('class="lhs"','class="lhs-ico"')+'Place gaucher</button>';
+  }).join('')+'<label class="sr" for="palMore">Autres éléments à poser</label><select id="palMore" class="pal-more" title="Table à trois, îlot de 6, bureau ou paillasse du prof, meuble, porte, fenêtre, place pour gaucher">'+
+    '<option value="">Autres éléments…</option>'+MORE_TOOLS.map(function(g){
+      return '<optgroup label="'+g[0]+'">'+g[1].map(function(k){return '<option value="'+k+'">'+toolLabel(k)+'</option>'}).join('')+'</optgroup>';
+    }).join('')+'</select>';
 }
 /* Les tables de la salle. present = affichage en grand : rien de cliquable, ni étoile ni cadenas. */
 function tablesHTML(p,layout,present){
@@ -2129,8 +2193,10 @@ function renderLayoutControls(){
   ne.disabled=!(st&&hasSeats(st));
   if(document.activeElement!==ne)ne.value=ne.disabled?'':tname(p,st);
   $('btnTnClear').disabled=!Object.keys(p.tnames||{}).length;
-  var pal=$('palette').children;
+  var pal=$('palette').querySelectorAll('button[data-kind]');
   for(var i=0;i<pal.length;i++)pal[i].setAttribute('aria-pressed',pal[i].dataset.kind===ui.tool);
+  var pm=$('palMore'),inMore=!!(ui.tool&&pm.querySelector('option[value="'+ui.tool+'"]'));
+  pm.value=inMore?ui.tool:'';pm.classList.toggle('on',inMore);
   var q=function(dim,d){return document.querySelector('[data-dim="'+dim+'"][data-d="'+d+'"]')};
   q('cols','-1').disabled=p.cols<=Math.max(3,e.cols);
   q('cols','1').disabled=p.cols>=MAXCOLS;
@@ -2225,11 +2291,15 @@ function newClass(){
 }
 function switchRoom(id){
   var r=state.rooms.filter(function(x){return x.id===id})[0];if(!r)return;
-  mutate(function(p){p.roomId=r.id;applyLayout(p,r,true)});
+  var had=false,cnt=0;
+  mutate(function(p){had=moveClassTo(p,r,true);cnt=p.apart.length+p.together.length+p.apartTable.length});
+  var fm=had?'Règles « qui à côté de qui » et places souhaitées de cette classe en « '+r.name+' » reprises.':
+    cnt?'Première fois dans « '+r.name+' » : les règles de la salle précédente sont reprises ; modifiez-les ici pour cette salle seulement.':'';
+  if(fm)flash(fm);
 }
 function newRoom(){
   var r={id:uid(),name:'Nouvelle salle',cols:8,rows:5,tables:makeTables('pairs',8,5),walls:[]};
-  mutate(function(p){state.rooms.push(r);p.roomId=r.id;applyLayout(p,r,true)});
+  mutate(function(p){state.rooms.push(r);moveClassTo(p,r,true)});
   setMode('layout');
   startRename('room');
   flash('Nouvelle salle : tapez son nom, puis disposez les tables.');
@@ -2291,7 +2361,7 @@ $('roomDelete').addEventListener('click',function(){
   var other=state.rooms.filter(function(x){return x.id!==r.id})[0];
   if(!other){disarm('room');flash('C’est la seule salle : créez-en une autre avant de supprimer celle-ci.');return}
   if(!arm('room'))return;
-  mutate(function(q){state.rooms=state.rooms.filter(function(x){return x.id!==r.id});q.roomId=other.id;applyLayout(q,other,true)});
+  mutate(function(q){state.rooms=state.rooms.filter(function(x){return x.id!==r.id});moveClassTo(q,other,true)});
   flash('Salle « '+r.name+' » supprimée. Cette classe est maintenant en « '+other.name+' ».');
 });
 
@@ -2385,7 +2455,7 @@ $('btnClass').addEventListener('click',function(){
     ui.classTimer=setTimeout(resetClass,3500);return;
   }
   resetClass();
-  mutate(function(p){p.students=[];p.seats={};p.apart=[];p.together=[];p.apartTable=[]});
+  mutate(function(p){p.students=[];p.seats={};p.apart=[];p.together=[];p.apartTable=[];p.byRoom={}});
 });
 function resetRoom(){clearTimeout(ui.roomTimer);ui.roomArmed=false;$('btnRoom').textContent='Vider la salle'}
 $('btnRoom').addEventListener('click',function(){
@@ -2411,6 +2481,12 @@ $('palette').addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b)return;
   var k=b.dataset.kind;
   if(ui.tool===k){ui.tool=null}else{ui.tool=k;ui.toolRot=0;ui.selT=null;ui.selW=null}
+  render();
+});
+$('palette').addEventListener('change',function(e){
+  if(e.target.id!=='palMore')return;
+  var k=e.target.value;
+  if(!k)ui.tool=null;else{ui.tool=k;ui.toolRot=0;ui.selT=null;ui.selW=null}
   render();
 });
 $('presetSelect').addEventListener('change',function(e){
@@ -2538,7 +2614,7 @@ grid.addEventListener('pointerdown',function(e){
   if(tEl&&!WALLK[ui.tool]){
     var t=tableById(p,tEl.dataset.tid);if(!t)return;
     e.preventDefault();
-    ui.drag={id:t.id,sx:t.x,sy:t.y,gc:cell.c,gr:cell.r,snap:snapshot(),el:tEl};
+    ui.drag={id:t.id,sx:t.x,sy:t.y,gc:cell.c,gr:cell.r,snap:snapshot(),el:tEl,px:e.clientX,py:e.clientY,moved:false,tx:t.x,ty:t.y,ok:true,gh:null};
     try{grid.setPointerCapture(e.pointerId)}catch(err){}
     if(ui.selT!==t.id||ui.tool||ui.selW){
       ui.selT=t.id;ui.tool=null;ui.selW=null;
@@ -2561,17 +2637,25 @@ grid.addEventListener('pointermove',function(e){
     return;
   }
   var d=ui.drag;if(!d)return;
+  /* Petit seuil : un simple clic (main qui tremble) ne déplace pas la table. */
+  if(!d.moved&&Math.abs(e.clientX-d.px)<6&&Math.abs(e.clientY-d.py)<6)return;
   var p=plan(),t=tableById(p,d.id);if(!t)return;
-  var cell=cellAt(e,p),nx=d.sx+cell.c-d.gc,ny=d.sy+cell.r-d.gr,tx=t.x,ty=t.y;
-  if(nx===t.x&&ny===t.y)return;
-  if(fits(p,t.kind,t.rot,nx,ny,t.id)){tx=nx;ty=ny}
-  else if(fits(p,t.kind,t.rot,nx,t.y,t.id)){tx=nx}
-  else if(fits(p,t.kind,t.rot,t.x,ny,t.id)){ty=ny}
-  if(tx!==t.x||ty!==t.y){
-    t.x=tx;t.y=ty;var dm=dims(t);
-    d.el.style.gridArea=(ty+1)+'/'+(tx+1)+'/span '+dm.h+'/span '+dm.w;
-  }
+  var dm=dims(t),cell=cellAt(e,p);
+  var nx=clamp(d.sx+cell.c-d.gc,0,p.cols-dm.w),ny=clamp(d.sy+cell.r-d.gr,0,p.rows-dm.h);
+  if(d.moved&&nx===d.tx&&ny===d.ty)return;
+  d.moved=true;d.tx=nx;d.ty=ny;d.ok=fits(p,t.kind,t.rot,nx,ny,t.id);
+  d.el.classList.add('dragging');
+  /* Cadre d'arrivée, à l'endroit exact visé (coordonnées affichées : retournées en vue prof). */
+  if(!d.gh||!d.gh.isConnected){d.gh=document.createElement('div');grid.appendChild(d.gh)}
+  var gx=V()?p.cols-nx-dm.w:nx,gy=V()?p.rows-ny-dm.h:ny;
+  d.gh.className='dropgh'+(d.ok?'':' bad');
+  d.gh.style.gridArea=(gy+1)+'/'+(gx+1)+'/span '+dm.h+'/span '+dm.w;
+  ui.msg=d.ok?'':'Place déjà prise : relâchez ailleurs (la table restera où elle était).';renderStatus();
 });
+function cancelDrag(){
+  if(ui.wdrag){endDrag();return}
+  if(!ui.drag)return;ui.drag=null;ui.msg='';render();
+}
 function endDrag(){
   if(ui.wdrag){
     var wd=ui.wdrag;ui.wdrag=null;
@@ -2581,9 +2665,13 @@ function endDrag(){
   }
   var d=ui.drag;if(!d)return;
   ui.drag=null;
+  if(!d.moved)return;
+  ui.msg='';
   var p=plan(),t=tableById(p,d.id);
   var lost=[];
-  if(t&&(t.x!==d.sx||t.y!==d.sy)){pushUndo(d.snap);lost=commitRoom(p);markChanged();save()}
+  /* La table est posée exactement à l'endroit visé, ou ne bouge pas : jamais à côté. */
+  if(t&&d.ok&&(d.tx!==t.x||d.ty!==t.y)){t.x=d.tx;t.y=d.ty;pushUndo(d.snap);lost=commitRoom(p);markChanged();save()}
+  else if(t&&!d.ok)flash('La place visée est prise : la table n’a pas bougé.');
   render();warnLost(lost);
 }
 /* Clic dans la marge autour de la salle (là où les murs sont dessinés) avec l'outil Porte ou Fenêtre. */
@@ -2592,7 +2680,7 @@ $('floor').addEventListener('pointerdown',function(e){
   e.preventDefault();stampWallAt(e);
 });
 grid.addEventListener('pointerup',endDrag);
-grid.addEventListener('pointercancel',endDrag);
+grid.addEventListener('pointercancel',cancelDrag);
 
 /* ---------- Affichage en grand et impression ---------- */
 var pres=$('present');
@@ -2853,7 +2941,7 @@ function analyse(rows){
   }
   var all=rows.slice(h<0?0:h),ncols=0;
   all.forEach(function(r){ncols=Math.max(ncols,r.length)});
-  var o={all:all,header:h>=0,ncols:ncols,name:0,first:-1,cls:-1};
+  var o={all:all,header:h>=0,ncols:ncols,name:0,first:-1};
   var data=o.header?all.slice(1):all;
   var col=function(j){return data.map(function(r){return r[j]||''}).filter(Boolean)};
   var isText=function(v){return /[a-zà-ÿ]{2,}/i.test(v)&&!/\d/.test(v)};
@@ -2865,13 +2953,12 @@ function analyse(rows){
   }
   if(o.header){
     var H=all[0].map(norm),find=function(re){for(var j=0;j<H.length;j++)if(re.test(H[j]))return j;return -1};
-    var pre=find(/^prenom/),nom=find(/^nom( de famille| d'usage| usuel)?$/),comb=find(/eleve|nom.*prenom|identite/),cl=find(/^classe/);
+    var pre=find(/^prenom/),nom=find(/^nom( de famille| d'usage| usuel)?$/),comb=find(/eleve|nom.*prenom|identite/);
     if(pre>=0&&nom>=0){o.name=nom;o.first=pre}
     else if(comb>=0){o.name=comb}
     else if(nom>=0){o.name=nom}
     else if(pre>=0){o.name=pre}
     else o.name=textScore.indexOf(Math.max.apply(null,textScore));
-    o.cls=cl;
   }else{
     var best=textScore.indexOf(Math.max.apply(null,textScore));
     o.name=best;
@@ -2880,12 +2967,6 @@ function analyse(rows){
       var other=nb[0],dn=data.length||1;
       if(upScore[best]>dn*.6&&upScore[other]<dn*.3){o.first=other}
       else if(upScore[other]>dn*.6&&upScore[best]<dn*.3){o.name=other;o.first=best}
-    }
-    for(var j2=0;j2<ncols;j2++){
-      if(j2===o.name||j2===o.first)continue;
-      var vs=col(j2),dist={};vs.forEach(function(v){dist[v]=1});
-      var nd=Object.keys(dist).length;
-      if(vs.length>3&&nd<=15&&vs.every(function(v){return v.length<=10&&/\d/.test(v)&&!/\d{1,2}\/\d{1,2}/.test(v)})){o.cls=j2;break}
     }
   }
   return o;
@@ -2916,11 +2997,6 @@ function impRows(){
     /* Ligne vide ou ligne de titres répétée (« Élève », « Nom »…). */
     return !!v&&!(HEAD_RE.test(norm(v))&&!/[A-ZÀ-Þ]{2}/.test(v));
   });
-}
-function classValues(){
-  if(imp.cls<0)return [];
-  var out=[];impRows().forEach(function(r){var c=(r[imp.cls]||'').trim();if(c&&out.indexOf(c)<0)out.push(c)});
-  return out;
 }
 /* Noms affichés, sans doublons : on ajoute l'initiale (puis le nom) quand deux prénoms se ressemblent. */
 function buildNames(rows,existing){
@@ -2957,50 +3033,21 @@ function fillImportSelects(){
   var all='';for(var j=0;j<imp.ncols;j++)all+=opt(j);
   $('impName').innerHTML=all;
   $('impFirst').innerHTML='<option value="-1">Dans la même colonne que le nom</option>'+all;
-  $('impClassCol').innerHTML='<option value="-1">Aucune</option>'+all;
-  $('impName').value=imp.name;$('impFirst').value=imp.first;$('impClassCol').value=imp.cls;
+  $('impName').value=imp.name;$('impFirst').value=imp.first;
   $('impHeader').checked=imp.header;
 }
 function updateImport(){
-  var p=plan(),cv=classValues(),box=$('impClassBox');
-  box.hidden=cv.length<2;
-  if(cv.length>=2){
-    var sel=$('impClass'),cur=sel.value;
-    sel.innerHTML=cv.map(function(c){return '<option>'+esc(c)+'</option>'}).join('')+'<option value="__all">Toutes les classes</option>';
-    if(cur&&(cur==='__all'||cv.indexOf(cur)>=0))sel.value=cur;
-    $('impSplitLabel').textContent='Créer une classe pour chacune ('+cv.length+' classes), dans la salle « '+roomOf(p).name+' »';
-  }
-  var mode=cv.length>=2?radio('impMode'):'one';
+  var p=plan();
   imp.fmt=radio('impFmt')||'first';
-  $('impReplaceBox').hidden=mode==='split';
-  var replace=$('impReplace').checked,rows=impRows(),sum,names,okLabel;
-  if(mode==='split'){
-    var parts=cv.map(function(c){
-      return {c:c,b:buildNames(rows.filter(function(r){return (r[imp.cls]||'').trim()===c}),[])};
-    });
-    imp.plan={mode:'split',parts:parts};
-    var tot=0;parts.forEach(function(x){tot+=x.b.names.length});
-    sum=parts.map(function(x){return x.c+' : '+x.b.names.length}).join(' · ');
-    names=parts[0].b.names.map(function(n){return n});
-    sum=tot+' élèves répartis en '+parts.length+' classes ('+sum+'). Aperçu de « '+parts[0].c+' » ci-dessous.';
-    okLabel='Créer '+parts.length+' classes';
-  }else{
-    if(cv.length>=2&&$('impClass').value!=='__all'){
-      var c=$('impClass').value||cv[0];
-      rows=rows.filter(function(r){return (r[imp.cls]||'').trim()===c});
-    }
-    var b=buildNames(rows,replace?[]:realStudents(p));
-    imp.plan={mode:'one',names:b.names,replace:replace};
-    names=b.names;
-    sum=b.names.length+' élève'+(b.names.length>1?'s':'')+' à '+(replace?'mettre dans cette classe':'ajouter')+
-      (b.skipped?' · '+b.skipped+' déjà dans la liste ou en double (ignoré'+(b.skipped>1?'s':'')+')':'')+'.';
-    okLabel=replace?'Remplacer la liste':'Ajouter '+b.names.length+' élève'+(b.names.length>1?'s':'');
-  }
-  $('impSummary').textContent=sum;
-  $('impPreview').innerHTML=names.length?names.map(function(n){return '<div class="chip"><span class="nm">'+esc(n)+'</span></div>'}).join(''):
+  var replace=$('impReplace').checked;
+  var b=buildNames(impRows(),replace?[]:realStudents(p));
+  imp.plan={names:b.names,replace:replace};
+  $('impSummary').textContent=b.names.length+' élève'+(b.names.length>1?'s':'')+' à '+(replace?'mettre dans cette classe':'ajouter')+
+    (b.skipped?' · '+b.skipped+' déjà dans la liste ou en double (ignoré'+(b.skipped>1?'s':'')+')':'')+'.';
+  $('impPreview').innerHTML=b.names.length?b.names.map(function(n){return '<div class="chip"><span class="nm">'+esc(n)+'</span></div>'}).join(''):
     '<p class="empty">Aucun nom trouvé : vérifiez la colonne du nom.</p>';
-  $('impOk').textContent=okLabel;
-  $('impOk').disabled=!names.length&&!(mode==='one'&&replace);
+  $('impOk').textContent=replace?'Remplacer la liste':'Ajouter '+b.names.length+' élève'+(b.names.length>1?'s':'');
+  $('impOk').disabled=!b.names.length&&!replace;
 }
 function openImport(rows,src){
   if(!rows||!rows.length){flash('Aucune ligne lisible dans ce fichier.');return}
@@ -3008,8 +3055,6 @@ function openImport(rows,src){
   var data=imp.header?imp.all.length-1:imp.all.length;
   $('impSrc').textContent=src+' · '+data+' ligne'+(data>1?'s':'')+' · '+imp.ncols+' colonne'+(imp.ncols>1?'s':'')+'. Vérifiez les colonnes proposées, puis l’aperçu.';
   fillImportSelects();
-  document.querySelector('input[name="impMode"][value="one"]').checked=true;
-  $('impClass').innerHTML='';
   $('impReplace').checked=false;
   $('importDlg').hidden=false;
   updateImport();
@@ -3019,23 +3064,9 @@ function closeImport(){$('importDlg').hidden=true;imp=null;$('btnImportList').fo
 function applyImport(){
   if(!imp||!imp.plan)return;
   var ip=imp.plan,cur=plan();
-  if(ip.mode==='split'){
-    var made=[];
-    ip.parts.forEach(function(x){
-      if(!x.b.names.length)return;
-      var p=planInRoom(roomOf(cur),x.c,x.b.names);
-      state.plans.push(p);made.push(p);
-    });
-    if(!made.length)return;
-    if(state.plans.length===made.length+1&&cur.demo)state.plans=state.plans.filter(function(q){return q!==cur});
-    state.current=made[0].id;resetUiSelection();save();
-    $('addNames').value='';closeImport();render();
-    flash(made.length+' classes créées. Choisissez-en une dans la liste Classe, puis Mélanger.');
-    return;
-  }
   var names=ip.names;
   mutate(function(p){
-    if(ip.replace){p.students=[];p.seats={};p.apart=[];p.together=[];p.apartTable=[]}
+    if(ip.replace){p.students=[];p.seats={};p.apart=[];p.together=[];p.apartTable=[];p.byRoom={}}
     names.forEach(function(n){p.students.push(newStudent(n))});
   });
   $('addNames').value='';closeImport();
@@ -3049,9 +3080,8 @@ $('listInput').addEventListener('change',function(e){
 $('impHeader').addEventListener('change',function(e){imp.header=e.target.checked;fillImportSelects();updateImport()});
 $('impName').addEventListener('change',function(e){imp.name=+e.target.value;updateImport()});
 $('impFirst').addEventListener('change',function(e){imp.first=+e.target.value;updateImport()});
-$('impClassCol').addEventListener('change',function(e){imp.cls=+e.target.value;$('impClass').innerHTML='';updateImport()});
 $('importDlg').addEventListener('change',function(e){
-  if(e.target.name==='impMode'||e.target.name==='impFmt'||e.target.id==='impClass'||e.target.id==='impReplace')updateImport();
+  if(e.target.name==='impFmt'||e.target.id==='impReplace')updateImport();
 });
 $('importDlg').addEventListener('click',function(e){if(e.target===$('importDlg'))closeImport()});
 $('impCancel').addEventListener('click',closeImport);
@@ -3096,19 +3126,7 @@ var REMIND_DAYS=7;
 var framed=false;try{framed=window.self!==window.top}catch(e){framed=true}
 function markChanged(){if(realState)return;var n=Date.now();state.lastChange=n;if(!state.changedSince)state.changedSince=n}
 function backupDone(){if(realState)return;state.lastBackup=Date.now();state.changedSince=null;save();renderSaveBar()}
-function renderMoveBar(){
-  var bar=$('moveBar'),host='';
-  try{host=new URL(NEW_URL).hostname}catch(e){}
-  var show=!!host&&/^https?:$/.test(location.protocol)&&location.hostname!==host&&!framed&&!realState&&!state.hideSide&&!moveLater;
-  bar.hidden=!show;if(!show)return false;
-  $('moveBarText').innerHTML='<b>PLASS déménage !</b> Nouvelle adresse : <a href="'+NEW_URL+'" target="_blank" rel="noopener">'+host+'</a>. Vos classes ne suivent pas toutes seules : enregistrez votre sauvegarde ici, puis, à la nouvelle adresse, ouvrez-la avec <b>Sauvegarde, PDF, impression → Sauvegarde → Ouvrir une sauvegarde</b>.';
-  $('moveGo').href=NEW_URL;
-  return true;
-}
-$('moveSave').addEventListener('click',function(){$('btnSaveFile').click()});
-$('moveLaterBtn').addEventListener('click',function(){moveLater=true;renderSaveBar()});
 function renderSaveBar(){
-  if(renderMoveBar()){$('saveBar').hidden=true;return}
   var bar=$('saveBar'),n=Date.now(),ref=state.lastBackup||state.firstUse;
   var show=!realState&&!state.hideSide&&!!state.changedSince&&n-ref>=REMIND_DAYS*DAY&&!(state.dismissedAt&&state.dismissedAt>=state.lastChange);
   bar.hidden=!show;if(!show)return;
@@ -3530,7 +3548,10 @@ $('btnImport').addEventListener('click',function(){
     /* Copie : salles et plans reçoivent de nouveaux identifiants. */
     var nid=function(id){return id?(rmap[id]||(rmap[id]=uid())):''};
     (Array.isArray(d.rooms)?d.rooms:[]).map(normalizeRoom).filter(Boolean).forEach(function(r){r.id=nid(r.id);state.rooms.push(r)});
-    ps.forEach(function(p){p.roomId=nid(p.roomId);state.plans.push(p)});
+    ps.forEach(function(p){
+      var nb={};Object.keys(p.byRoom||{}).forEach(function(k){nb[nid(k)]=p.byRoom[k]});p.byRoom=nb;
+      p.roomId=nid(p.roomId);state.plans.push(p);
+    });
     ensureRooms(state);
     state.current=ps[0].id;resetUiSelection();save();render();
     setMsg(ps.length+' classe'+(ps.length>1?'s':'')+' importée'+(ps.length>1?'s':'')+'.');
