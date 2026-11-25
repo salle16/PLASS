@@ -1411,6 +1411,14 @@ function autoSeat(p,mode){
     /* Les fantômes viennent après les élèves. Les places sont prises de l'avant vers le fond. */
     studs.sort(function(a,b){return (a.ghost-b.ghost)||a.name.localeCompare(b.name,'fr',{sensitivity:'base'})});
     studs.forEach(function(s,i){if(open[i])seats0[open[i].key]=s.id});
+    /* Deux fantômes côte à côte : on envoie l'un sur une place libre qui n'est pas voisine d'un autre fantôme. */
+    var gOf=function(k){var x=seats0[k];return !!x&&!!byId(p,x)&&!!byId(p,x).ghost};
+    open.forEach(function(sl){
+      if(!gOf(sl.key)||fixed[sl.key])return;
+      var clash=open.some(function(o){return o.key!==sl.key&&gOf(o.key)&&side(sl,o)});if(!clash)return;
+      var dest=open.filter(function(o){return !seats0[o.key]&&!open.some(function(q){return q.key!==o.key&&gOf(q.key)&&side(o,q)})}).pop();
+      if(dest){seats0[dest.key]=seats0[sl.key];delete seats0[sl.key]}
+    });
     p.seats=seats0;
     return ruleIssues(p).n;
   }
@@ -1488,7 +1496,10 @@ function autoSeat(p,mode){
       useKeysAll.forEach(function(k){if(!seats[k]&&bykey[k].r<maxR)out.push({a:[k],w:(maxR-bykey[k].r)*0.05})});
       adj.forEach(function(a){
         /* Deux places vides (fantôme ou place libre) côte à côte. */
-        if(empty(seats,a[0])&&empty(seats,a[1])){if(useKey[a[0]]||useKey[a[1]])out.push({a:a,w:G});return}
+        if(empty(seats,a[0])&&empty(seats,a[1])){
+          /* Deux fantômes côte à côte : défaut lourd (5 fois plus qu'une place libre), juste sous une règle non respectée. */
+          var gg=seats[a[0]]&&seats[a[1]];
+          if(useKey[a[0]]||useKey[a[1]])out.push({a:a,w:gg?G*5:G});return}
         var x=seats[a[0]],y=seats[a[1]];if(!x||!y)return;
         /* Coudes : un gaucher juste à droite d'un droitier. */
         if((isRight[x]&&isLeft[y]&&elbowClash(a[0],a[1]))||(isRight[y]&&isLeft[x]&&elbowClash(a[1],a[0])))out.push({a:a,w:E});
