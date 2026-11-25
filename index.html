@@ -509,6 +509,7 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
         </div>
         <ul class="apart-list" id="apartList"></ul>
         <p class="hint" id="ruleRoom" style="margin-top:6px"></p>
+        <button class="btn" id="btnResetRules" type="button" hidden title="Remet à zéro, pour cette salle seulement, les règles « qui à côté de qui », les places souhaitées, les fantômes, le critère, la rotation et les noms de tables. Les autres salles ne changent pas.">Dissocier : repartir de zéro dans cette salle</button>
       </div>
       <div>
         <div class="list-title"><span class="lt">Critère<span class="info-wrap"><button class="info" type="button" aria-expanded="false" aria-controls="tipCrit" aria-label="Aide : critère oui / non">i</button><span class="tip" id="tipCrit" role="tooltip">Nom du critère (ex. Bavard, Fille, Garçon). Cliquez ensuite sur la lettre à côté du nom de chaque élève concerné. Cochez « alterner » pour que le mélange asseye côte à côte un « oui » et un « non » (un bavard avec un calme, une fille avec un garçon), autant que la salle le permet ; les règles « qui à côté de qui » restent prioritaires.</span></span></span><span id="countTag"></span></div>
@@ -1150,6 +1151,12 @@ function normalize(p,keepId){
     var ap=[];(Array.isArray(b.apart)?b.apart:[]).forEach(function(g){if(!Array.isArray(g))return;var x=[];g.forEach(function(id){if(ok[id]&&x.indexOf(id)<0)x.push(id)});if(x.length>1)ap.push(x)});
     var e={apart:ap,together:pr(b.together),apartTable:pr(b.apartTable),prefs:{},ghosts:[]};
     if(b.prefs&&typeof b.prefs==='object')Object.keys(b.prefs).forEach(function(id){if(realIds[id]&&PREFS.indexOf(b.prefs[id])>0)e.prefs[id]=b.prefs[id]});
+    if(b.crit&&typeof b.crit==='object'){
+      e.crit={label:typeof b.crit.label==='string'?b.crit.label.slice(0,20):'Bavard',mix:!!b.crit.mix};
+      e.tags=(Array.isArray(b.tags)?b.tags:[]).filter(function(id,i,a){return realIds[id]&&a.indexOf(id)===i});
+      e.rot={on:!!(b.rot&&b.rot.on),depth:clamp(((b.rot&&b.rot.depth)|0)||1,1,3)};
+      e.tnames={};if(b.tnames&&typeof b.tnames==='object')Object.keys(b.tnames).forEach(function(k){var v=b.tnames[k];if(typeof v==='string'&&v.trim())e.tnames[k]=v.replace(/\s+/g,' ').trim().slice(0,24)});
+    }
     var used={};e.apart.concat(e.together,e.apartTable).forEach(function(g){g.forEach(function(id){used[id]=1})});
     e.ghosts=gh.filter(function(g,i){return used[g]&&gh.indexOf(g)===i});
     byRoom[rid]=e;
@@ -1206,7 +1213,8 @@ function moveClassTo(p,r,reseatAll){
   if(p.roomId&&p.roomId!==r.id){
     var pm={};p.students.forEach(function(s){if(!s.ghost&&s.pref)pm[s.id]=s.pref});
     p.byRoom=p.byRoom||{};
-    p.byRoom[p.roomId]=JSON.parse(JSON.stringify({apart:p.apart,together:p.together,apartTable:p.apartTable,prefs:pm,ghosts:ghosts(p).map(function(g){return g.id})}));
+    p.byRoom[p.roomId]=JSON.parse(JSON.stringify({apart:p.apart,together:p.together,apartTable:p.apartTable,prefs:pm,ghosts:ghosts(p).map(function(g){return g.id}),
+      crit:p.crit,tags:p.students.filter(function(s){return !s.ghost&&s.tag}).map(function(s){return s.id}),rot:p.rot,tnames:p.tnames||{}}));
     var b=p.byRoom[r.id];
     if(b){
       had=true;
@@ -1215,8 +1223,11 @@ function moveClassTo(p,r,reseatAll){
       (b.ghosts||[]).forEach(function(id){var g=newGhost();g.id=id;p.students.push(g)});
       p.apart=b.apart||[];p.together=b.together||[];p.apartTable=b.apartTable||[];
       p.students.forEach(function(s){if(s.ghost)return;var v=(b.prefs||{})[s.id]||'';s.pref=v;s.front=v==='front'});
+      if(b.crit){p.crit=b.crit;var tg={};(b.tags||[]).forEach(function(id){tg[id]=1});p.students.forEach(function(s){if(!s.ghost)s.tag=!!tg[s.id]})}
+      if(b.rot)p.rot=b.rot;
+      p.tnames=b.tnames||{};
       delete p.byRoom[r.id];
-    }
+    }else p.tnames={};
   }
   p.roomId=r.id;
   applyLayout(p,r,reseatAll);
@@ -1733,7 +1744,7 @@ function dropStudent(p,id){
   Object.keys(p.byRoom||{}).forEach(function(rid){
     var b=p.byRoom[rid],nf=function(a){return a[0]!==id&&a[1]!==id};
     b.apart=b.apart.map(function(g){return g.filter(function(x){return x!==id})}).filter(function(g){return g.length>1});
-    b.together=b.together.filter(nf);b.apartTable=b.apartTable.filter(nf);if(b.prefs)delete b.prefs[id];
+    b.together=b.together.filter(nf);b.apartTable=b.apartTable.filter(nf);if(b.prefs)delete b.prefs[id];if(b.tags)b.tags=b.tags.filter(function(x){return x!==id});
   });
 }
 function removeStudent(id){mutate(function(p){dropStudent(p,id)})}
@@ -2053,7 +2064,8 @@ function renderApart(p){
   });
   $('countAp').textContent=items.length||'';
   var rm=roomOf(p),others=Object.keys(p.byRoom||{}).map(function(id){var x=state.rooms.filter(function(y){return y.id===id})[0];return x&&x.name}).filter(Boolean);
-  $('ruleRoom').textContent='Règles et places souhaitées de cette classe en « '+(rm?rm.name:'')+' ». Dans une autre salle, elle peut en avoir d’autres'+(others.length?' (déjà définies : '+others.join(', ')+')':'')+'.';
+  $('ruleRoom').textContent='Règles, places souhaitées, critère, rotation et noms de tables de cette classe en « '+(rm?rm.name:'')+' ». Dans une autre salle, elle peut en avoir d’autres'+(others.length?' (déjà définies : '+others.join(', ')+')':'')+'.';
+  $('btnResetRules').hidden=!(p.apart.length||p.together.length||p.apartTable.length||p.rot.on||p.crit.mix||p.crit.label!=='Bavard'||Object.keys(p.tnames||{}).length||p.students.some(function(s){return s.ghost||s.pref||s.tag}));
   $('apartList').innerHTML=items.length?items.join(''):'<li class="empty">Aucune règle pour l’instant.</li>';
 }
 function glyph(kind){
@@ -2294,9 +2306,22 @@ function switchRoom(id){
   var r=state.rooms.filter(function(x){return x.id===id})[0];if(!r)return;
   var had=false,cnt=0;
   mutate(function(p){had=moveClassTo(p,r,true);cnt=p.apart.length+p.together.length+p.apartTable.length});
-  var fm=had?'Règles « qui à côté de qui » et places souhaitées de cette classe en « '+r.name+' » reprises.':
-    cnt?'Première fois dans « '+r.name+' » : les règles de la salle précédente sont reprises ; modifiez-les ici pour cette salle seulement.':'';
+  var fm=had?'Règles, critère, rotation et noms de tables de cette classe en « '+r.name+' » repris.':
+    cnt?'Première fois dans « '+r.name+' » : les règles et le critère de la salle précédente sont repris ; modifiez-les ici pour cette salle seulement, ou cliquez sur « Dissocier » pour repartir de zéro.':'';
   if(fm)flash(fm);
+}
+/* Dissocier : la classe repart sans règle dans la salle actuelle ; les règles des autres salles restent rangées dans p.byRoom. */
+function resetRoomRules(){
+  mutate(function(p){
+    ghosts(p).forEach(function(g){var k=seatOf(p,g.id);if(k)delete p.seats[k]});
+    p.students=p.students.filter(function(s){return !s.ghost});
+    p.students.forEach(function(s){s.pref='';s.front=false});
+    p.apart=[];p.together=[];p.apartTable=[];
+    p.crit={label:'Bavard',mix:false};p.rot={on:false,depth:1};p.tnames={};
+    p.students.forEach(function(s){s.tag=false});
+    fixLocks(p);
+  });
+  flash('Règles, places souhaitées, critère, rotation et noms de tables remis à zéro pour cette salle seulement. « Annuler » les rétablit.');
 }
 function newRoom(){
   var r={id:uid(),name:'Nouvelle salle',cols:8,rows:5,tables:makeTables('pairs',8,5),walls:[]};
@@ -2411,6 +2436,7 @@ $('side').addEventListener('change',function(e){
   }
 });
 $('side').addEventListener('click',function(e){
+  if(e.target.closest('#btnResetRules')){resetRoomRules();return}
   var ru=e.target.closest('[data-rule]');
   if(ru){var m=ru.dataset.rule.split(':');removeRule(m[0],+m[1]);return}
   if(e.target.tagName==='SELECT'||e.target.tagName==='OPTION')return;
