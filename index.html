@@ -202,7 +202,7 @@ textarea{width:100%;resize:vertical}
 }
 .grid{
   --row-h:62px;--ch:8px;
-  display:grid;gap:14px 10px;
+  display:grid;gap:30px 22px;
   grid-template-columns:repeat(var(--cols),minmax(0,1fr));
   grid-template-rows:repeat(var(--rows),var(--row-h));
 }
@@ -285,7 +285,7 @@ textarea{width:100%;resize:vertical}
 .present .pfloor{flex:1;min-height:0;display:flex;flex-direction:column;gap:2vmin}
 .present .board{font-size:clamp(.75rem,1.7vmin,1.4rem);padding:1.1vmin;border-bottom-width:max(6px,.8vmin)}
 .present.tv .board{order:2}
-.present .grid{flex:1;min-height:0;padding:2.5vmin 2.5vmin;gap:max(14px,2vmin) max(10px,1.3vmin);--ch:max(8px,1.1vmin);grid-template-rows:repeat(var(--rows),minmax(0,1fr))}
+.present .grid{flex:1;min-height:0;padding:2.5vmin 2.5vmin;gap:max(30px,3.6vmin) max(22px,2.4vmin);--ch:max(8px,1.1vmin);grid-template-rows:repeat(var(--rows),minmax(0,1fr))}
 .present .seat{container-type:size;padding:3px}
 .present .seat .nm{display:block;-webkit-line-clamp:unset;overflow:visible;overflow-wrap:normal;line-height:1.08;
   font-size:clamp(11px,min(28cqw,40cqh),120px)}
@@ -307,7 +307,7 @@ textarea{width:100%;resize:vertical}
   html .print-brand{display:block;margin:4mm 0 0;font-size:8pt;color:#666;text-align:right}
   .floor-wrap{border:0;overflow:visible;background:none;border-radius:0}
   .floor{min-width:0;padding:0;gap:5mm}
-  .grid{--row-h:calc(108mm / var(--rows));gap:3.2mm 3mm;--ch:2.2mm}
+  .grid{--row-h:calc(108mm / var(--rows));gap:6.5mm 5.5mm;--ch:2.2mm}
   .gcell,.mark{display:none}
   .seat .lhs{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .wall{--wt:2mm}
@@ -409,7 +409,7 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
 .hprev{display:flex;flex-direction:column;gap:10px;margin-top:8px;padding:10px 18px 16px;background:var(--floor);border-radius:10px;overflow-x:auto}
 .hprev.tv .board{order:2}
 .hprev .board{padding:4px;font-size:.6rem}
-.hgrid{--row-h:40px;--ch:5px;gap:9px 7px;min-width:calc(var(--cols) * 44px)}
+.hgrid{--row-h:40px;--ch:5px;gap:20px 16px;min-width:calc(var(--cols) * 44px)}
 .hgrid .seat{padding:2px}
 .hgrid .seat .nm{font-size:.66rem;-webkit-line-clamp:2}
 .hgrid .seat .gh svg{width:20px;height:20px}
@@ -782,13 +782,13 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
       <section id="h-room">
         <h3>Disposer la salle (onglet Salle)</h3>
         <ul>
-          <li><b>Poser</b> : choisissez une table seule, à deux ou un îlot de 4 (boutons), ou un autre élément dans le menu <b>Autres éléments…</b> (table à trois, îlot de 6, bureau du prof, paillasse du prof, meuble, porte, fenêtre, place gaucher), puis cliquez dans la salle. La paillasse fait 4 cases de long ; pivotez-la pour la mettre le long d’un mur.</li>
+          <li><b>Poser</b> : choisissez une table seule, à deux ou un îlot de 4 (boutons), ou un autre élément dans le menu <b>Autres éléments…</b> (table à trois, table à quatre, îlot de 6, bureau du prof, paillasse du prof, meuble, porte, fenêtre, place gaucher), puis cliquez dans la salle. La paillasse fait 4 cases de long ; pivotez-la pour la mettre le long d’un mur.</li>
           <li><b>Place gaucher</b> (menu Autres éléments) : choisissez cet outil puis cliquez sur les places équipées pour les gauchers (chaise ou tablette à gauche) ; recliquez pour enlever la marque. Une petite tablette violette les signale, aussi en affichage en grand et à l’impression. Comme les tables, ces places valent pour toutes les classes de la salle.</li>
           <li><b>Portes et fenêtres</b> : choisissez Porte ou Fenêtre dans le menu Autres éléments, puis cliquez directement sur le bord de la salle, à l’endroit voulu : elle se pose sur le mur le plus proche du clic (trait marron pour une porte, bleu clair pour une fenêtre). Glissez-la le long d’un mur ou vers un autre mur ; « Plus longue / Plus courte » règle sa taille.</li>
           <li><b>Déplacer</b> : glissez une table. Pendant le glissement, la table reste en place et un cadre en pointillés montre exactement où elle sera posée ; s’il est rouge, la place est prise et la table ne bouge pas. Vous pouvez aussi la sélectionner et utiliser les flèches du clavier.</li>
           <li><b>Élément choisi</b> : pivoter, incliner par pas de 15° (jusqu’à 45°), redresser, dupliquer, retirer.</li>
           <li><b>Modèle</b> (menu déroulant) : binômes, tables à trois, tables seules, îlots de 4, en épi, en U, en autobus, ou vider la salle. Il remplace les tables de la salle ; les élèves déjà placés reprennent les nouvelles places dans l’ordre. En cas d’erreur, <b>Annuler l’action</b>.</li>
-          <li><b>Nom de la table</b> (travail en groupe) : cliquez sur une table où s’assoient des élèves (seule, à deux, à trois, îlot de 4 ou de 6), puis tapez son nom dans la case <b>Nom de la table</b> (à droite du menu Modèle) et validez avec Entrée (24 caractères au plus, par exemple « Équipe 1 » ou « Les Lynx »). Le nom s’affiche sur le coin de la table. Laissez la case vide pour retirer le nom ; <b>Effacer les noms</b> les retire tous. Contrairement aux tables elles-mêmes, les noms sont <b>propres à chaque classe</b> : deux classes qui partagent la salle ont chacune leurs noms d’équipes. Ils ne comptent pas dans le mélange.</li>
+          <li><b>Nom de la table</b> (travail en groupe) : cliquez sur une table où s’assoient des élèves (seule, à deux, à trois, à quatre, îlot de 4 ou de 6), puis tapez son nom dans la case <b>Nom de la table</b> (à droite du menu Modèle) et validez avec Entrée (24 caractères au plus, par exemple « Équipe 1 » ou « Les Lynx »). Le nom s’affiche sur le coin de la table. Laissez la case vide pour retirer le nom ; <b>Effacer les noms</b> les retire tous. Contrairement aux tables elles-mêmes, les noms sont <b>propres à chaque classe</b> : deux classes qui partagent la salle ont chacune leurs noms d’équipes. Ils ne comptent pas dans le mélange.</li>
           <li><b>Taille</b> : nombre de colonnes et de rangées.</li>
           <li>Les petites <b>chaises</b> montrent où s’assoient les élèves ; leur trait foncé est le dossier.</li>
         </ul>
@@ -898,7 +898,7 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
 var PAGE_SRC='';
 try{PAGE_SRC='<!doctype html>\n'+document.documentElement.outerHTML}catch(e){}
 var KEY='plans-de-classe-v1';
-var GAPX=10,GAPY=14,MAXCOLS=16,MAXROWS=10;
+var GAPX=22,GAPY=30,MAXCOLS=16,MAXROWS=10;
 var HOUR=3600000,DAY=86400000,HISTMAX=20;
 var $=function(id){return document.getElementById(id)};
 var uid=function(){return Math.random().toString(36).slice(2,9)};
@@ -935,6 +935,7 @@ var KINDS={
   single:{w:1,h:1,label:'Table seule',face:true},
   pair:{w:2,h:1,label:'Table à deux',face:true},
   trio:{w:3,h:1,label:'Table à trois',face:true},
+  quad:{w:4,h:1,label:'Table à quatre',face:true},
   island4:{w:2,h:2,label:'Îlot de 4',face:false},
   island6:{w:3,h:2,label:'Îlot de 6',face:false},
   teacher:{w:2,h:1,label:'Bureau du prof',face:false,seats:0},
@@ -2064,12 +2065,12 @@ function glyph(kind){
   return h+'</svg>';
 }
 /* Palette : les trois tables les plus courantes en boutons, tout le reste dans un menu déroulant (gain de place). */
-var MORE_TOOLS=[['Tables',['trio','island6']],['Prof et mobilier',['teacher','bench','cupboard']],['Murs',['wdoor','wwindow']],['Places',['lhseat']]];
+var MORE_TOOLS=[['Tables',['trio','quad','island6']],['Prof et mobilier',['teacher','bench','cupboard']],['Murs',['wdoor','wwindow']],['Places',['lhseat']]];
 function toolLabel(k){return k==='lhseat'?'Place gaucher':WALLK[k]?WALLK[k].label:KINDS[k].label}
 function buildPalette(){
   $('palette').innerHTML=KIND_ORDER.map(function(k){
     return '<button class="btn" type="button" data-kind="'+k+'" aria-pressed="false">'+glyph(k)+KINDS[k].label+'</button>';
-  }).join('')+'<label class="sr" for="palMore">Autres éléments à poser</label><select id="palMore" class="pal-more" title="Table à trois, îlot de 6, bureau ou paillasse du prof, meuble, porte, fenêtre, place pour gaucher">'+
+  }).join('')+'<label class="sr" for="palMore">Autres éléments à poser</label><select id="palMore" class="pal-more" title="Table à trois, table à quatre, îlot de 6, bureau ou paillasse du prof, meuble, porte, fenêtre, place pour gaucher">'+
     '<option value="">Autres éléments…</option>'+MORE_TOOLS.map(function(g){
       return '<optgroup label="'+g[0]+'">'+g[1].map(function(k){return '<option value="'+k+'">'+toolLabel(k)+'</option>'}).join('')+'</optgroup>';
     }).join('')+'</select>';
@@ -3236,7 +3237,7 @@ function buildPdf(p){
   };
 
   /* Mise en page : titre, tableau, grille centrée. */
-  var r=roomOf(p),M=34,top=60,bottom=PH-30,pad=13,gx=8,gy=12,BH=18,BG=12;
+  var r=roomOf(p),M=34,top=60,bottom=PH-30,pad=13,gx=17,gy=25,BH=18,BG=12;
   var W=PW-2*M-2*pad,H=bottom-top-BH-BG-2*pad;
   var cw=(W-(p.cols-1)*gx)/p.cols,rh=(H-(p.rows-1)*gy)/p.rows;
   rh=Math.min(rh,cw*.9,64);cw=Math.min(cw,rh*1.9);
