@@ -91,6 +91,8 @@ textarea{width:100%;resize:vertical}
 .chip.placed{opacity:.78;background:var(--floor)}
 .chip .absck{flex:none;margin:0 3px 0 -4px;width:15px;height:15px;cursor:pointer;accent-color:var(--warn)}
 .chip.absent{opacity:.6}
+.chip .nm{cursor:text}
+.chip .st-edit{width:100%;font:600 .85rem var(--font-body);padding:2px 5px;border-radius:5px}
 .chip.absent .nm{text-decoration:line-through;color:var(--muted)}
 .chip.sel{outline:3px solid var(--accent);outline-offset:0;opacity:1}
 .star[aria-pressed="true"]{color:var(--star)}
@@ -750,6 +752,7 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
         <h3>Place souhaitée, cadenas et règles</h3>
         <ul>
           <li><b>Menu à côté du nom</b> (— / Devant / Fond / Fenêtre / Bureau) : lors d’un mélange, l’élève est placé dans les premières rangées, dans les derniers rangs, près d’une fenêtre ou près du bureau (ou de la paillasse) du prof. Une petite icône le rappelle sur sa place. Fenêtre et Bureau ne comptent que si la salle a une fenêtre, un bureau ou une paillasse du prof.</li>
+          <li><b>Renommer un élève</b> : double-cliquez sur son nom dans la liste (ou sélectionnez-le puis « Renommer » dans la barre d’état, ou touche <kbd>F2</kbd>), tapez le nouveau nom puis Entrée. Échap annule. Sa place, ses règles et l’historique sont gardés.</li>
           <li><b>Case à cocher</b> devant le nom : l’élève est <b>absent</b> pour la séance. Il reste dans la classe, mais son nom disparaît du plan (à l’écran, en grand, à l’impression et en PDF) et le mélange ne le place pas. Décochez la case à son retour.</li>
           <li><b>Cadenas</b> (élèves placés) : l’élève garde sa place lors d’un mélange.</li>
           <li><b>Main</b> à côté du nom : l’élève est gaucher (une petite main le rappelle sur sa place). Au mélange, les gauchers vont d’abord sur les <b>places pour gauchers</b> (voir l’onglet Salle) ; un droitier n’en prend une que s’il ne reste plus d’autre place pour lui. Le mélange évite aussi de mettre un gaucher juste à droite d’un droitier, pour que leurs coudes ne se gênent pas en écrivant (gauche et droite vues depuis la place de l’élève).</li>
@@ -1770,6 +1773,35 @@ function removeStudent(id){mutate(function(p){dropStudent(p,id)})}
 function toggleTag(id){mutate(function(p){var s=byId(p,id);if(s&&!s.ghost)s.tag=!s.tag})}
 function toggleLeft(id){mutate(function(p){var s=byId(p,id);if(s&&!s.ghost)s.left=!s.left})}
 function toggleAbsent(id){mutate(function(p){var s=byId(p,id);if(s&&!s.ghost)s.absent=!s.absent})}
+/* Renommer un élève : double-clic sur son nom dans la liste (ou lien « Renommer » quand il est sélectionné).
+   Entrée ou clic ailleurs pour valider, Échap pour annuler. Places, règles et historique sont gardés. */
+function startStudentRename(id){
+  var p=plan(),s=byId(p,id);if(!s||s.ghost)return;
+  if(state.hideSide){state.hideSide=false;save();render()}
+  var chip=$('side').querySelector('.chip[data-id="'+id+'"]');if(!chip)return;
+  var nm=chip.querySelector('.nm');if(!nm||nm.querySelector('input'))return;
+  chip.draggable=false;
+  nm.innerHTML='<input type="text" class="st-edit" maxlength="60" aria-label="Nouveau nom de '+esc(s.name)+'">';
+  var inp=nm.querySelector('input'),done=false;
+  inp.value=s.name;
+  var finish=function(commit){
+    if(done)return;done=true;
+    var v=inp.value.replace(/\s+/g,' ').trim().slice(0,60);
+    if(commit&&v&&v!==s.name){
+      mutate(function(q){var x=byId(q,id);if(x)x.name=v});
+      flash('Élève renommé : « '+v+' ».');
+    }else render();
+  };
+  inp.addEventListener('keydown',function(e){
+    e.stopPropagation();
+    if(e.key==='Enter'){e.preventDefault();finish(true)}
+    else if(e.key==='Escape'){e.preventDefault();finish(false)}
+  });
+  inp.addEventListener('blur',function(){finish(true)});
+  inp.addEventListener('click',function(e){e.stopPropagation()});
+  inp.addEventListener('dblclick',function(e){e.stopPropagation()});
+  inp.focus();inp.select();
+}
 /* Place pour gaucher : marquée sur la table, donc dans la salle (pour toutes les classes qui y ont cours). */
 function toggleLhSeat(key){
   var m=key.split(':'),tid=m[0],i=+m[1];
@@ -2280,7 +2312,8 @@ function renderStatus(){
     if(V())parts.push('Vue prof : la salle est vue depuis le tableau, qui est en bas.');
     var s=ui.sel&&byId(p,ui.sel);
     if(s){
-      parts.push(esc(s.name)+' est sélectionné : cliquez sur une place.'+(seatOf(p,s.id)?' <button class="link" id="btnUnseat" type="button">Remettre dans la liste</button>':''));
+      parts.push(esc(s.name)+' est sélectionné : cliquez sur une place.'+(seatOf(p,s.id)?' <button class="link" id="btnUnseat" type="button">Remettre dans la liste</button>':'')+
+        (s.ghost?'':' <button class="link" id="btnRenameSt" type="button">Renommer</button>'));
     }else{
       parts.push('Choisissez un élève, puis une place. Le glisser-déposer fonctionne aussi.');
     }
@@ -2475,9 +2508,13 @@ $('side').addEventListener('click',function(e){
     else if(act.dataset.act==='remove')removeStudent(id);
     return;
   }
+  if(e.target.closest('.st-edit'))return;
+  /* Double-clic sur le nom : renommer (l'élève reste sélectionné). */
+  if(e.detail>=2&&e.target.closest('.nm')&&!chip.classList.contains('ghost')){ui.sel=id;render();startStudentRename(id);return}
   ui.sel=ui.sel===id?null:id;render();
 });
 $('side').addEventListener('keydown',function(e){
+  if(e.key==='F2'&&e.target.classList&&e.target.classList.contains('chip')){e.preventDefault();startStudentRename(e.target.dataset.id);return}
   if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('chip')){
     e.preventDefault();ui.sel=ui.sel===e.target.dataset.id?null:e.target.dataset.id;render();
   }
@@ -2575,6 +2612,7 @@ $('layoutTools').addEventListener('click',function(e){
 });
 $('status').addEventListener('click',function(e){
   if(e.target.id==='btnUnseat'&&ui.sel)unseat(ui.sel);
+  if(e.target.id==='btnRenameSt'&&ui.sel)startStudentRename(ui.sel);
 });
 
 /* ---------- Événements : mode placement ---------- */
