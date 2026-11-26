@@ -89,6 +89,9 @@ textarea{width:100%;resize:vertical}
 }
 .chip .nm{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:600;font-size:.85rem;line-height:1.2}
 .chip.placed{opacity:.78;background:var(--floor)}
+.chip .absck{flex:none;margin:0 3px 0 -4px;width:15px;height:15px;cursor:pointer;accent-color:var(--warn)}
+.chip.absent{opacity:.6}
+.chip.absent .nm{text-decoration:line-through;color:var(--muted)}
 .chip.sel{outline:3px solid var(--accent);outline-offset:0;opacity:1}
 .star[aria-pressed="true"]{color:var(--star)}
 .star svg path{fill:none}
@@ -113,7 +116,7 @@ textarea{width:100%;resize:vertical}
 .present .seat .gh svg{width:min(70cqw,70cqh);height:auto}
 /* Place souhaitée : menu à côté du nom */
 .mark.pf svg path{fill:none}
-.chip select.pref{flex:none;font:600 .75rem var(--font-body);padding:3px 2px;border-radius:6px;max-width:82px;color:var(--muted)}
+.chip select.pref{flex:none;font:600 .75rem var(--font-body);padding:3px 0;border-radius:6px;max-width:66px;color:var(--muted)}
 .chip select.pref.on{color:var(--accent);border-color:var(--accent)}
 /* Portes et fenêtres : des traits le long des murs, juste à l'extérieur de la grille, au-delà des chaises. */
 .wall{position:relative;z-index:3;pointer-events:none;border-radius:3px;--wt:8px;--wo:calc(var(--ch,8px) + var(--wt) + 5px);min-width:0;min-height:0}
@@ -747,6 +750,7 @@ kbd{font:600 .8rem ui-monospace,Menlo,monospace;border:1px solid var(--line);bor
         <h3>Place souhaitée, cadenas et règles</h3>
         <ul>
           <li><b>Menu à côté du nom</b> (— / Devant / Fond / Fenêtre / Bureau) : lors d’un mélange, l’élève est placé dans les premières rangées, dans les derniers rangs, près d’une fenêtre ou près du bureau (ou de la paillasse) du prof. Une petite icône le rappelle sur sa place. Fenêtre et Bureau ne comptent que si la salle a une fenêtre, un bureau ou une paillasse du prof.</li>
+          <li><b>Case à cocher</b> devant le nom : l’élève est <b>absent</b> pour la séance. Il reste dans la classe, mais son nom disparaît du plan (à l’écran, en grand, à l’impression et en PDF) et le mélange ne le place pas. Décochez la case à son retour.</li>
           <li><b>Cadenas</b> (élèves placés) : l’élève garde sa place lors d’un mélange.</li>
           <li><b>Main</b> à côté du nom : l’élève est gaucher (une petite main le rappelle sur sa place). Au mélange, les gauchers vont d’abord sur les <b>places pour gauchers</b> (voir l’onglet Salle) ; un droitier n’en prend une que s’il ne reste plus d’autre place pour lui. Le mélange évite aussi de mettre un gaucher juste à droite d’un droitier, pour que leurs coudes ne se gênent pas en écrivant (gauche et droite vues depuis la place de l’élève).</li>
           <li><b>Qui à côté de qui</b> : choisissez deux élèves et le type de règle :
@@ -1073,7 +1077,9 @@ function makePlan(name,cols,rows,type,names,roomId){
     students:names.map(function(n){return newStudent(n)}),seats:{},apart:[],together:[],apartTable:[],
     crit:{label:'Bavard',mix:false},walls:[],rot:{on:false,depth:1},history:[],tnames:{},byRoom:{}};
 }
-function newStudent(n){return {id:uid(),name:n,front:false,pref:'',lock:false,tag:false,left:false}}
+function newStudent(n){return {id:uid(),name:n,front:false,pref:'',lock:false,tag:false,left:false,absent:false}}
+/* Élève absent à cette séance : il reste dans la classe, mais son nom n'apparaît plus sur le plan et le mélange ne le place pas. */
+function isAbsent(p,id){var s=byId(p,id);return !!(s&&s.absent)}
 /* Nouveau plan (une classe) dans une salle enregistrée. */
 function planInRoom(r,name,names){
   var p=makePlan(name,r.cols,r.rows,'empty',names||[],r.id);
@@ -1102,7 +1108,7 @@ function normalize(p,keepId){
     .map(function(s){
       /* L'ancienne étoile « devant » devient la place souhaitée « Devant ». Un fantôme n'a ni critère ni place souhaitée. */
       var g=!!s.ghost,pf=g?'':(PREFS.indexOf(s.pref)>0?s.pref:(s.front?'front':''));
-      return {id:s.id,name:g?'Fantôme':s.name.slice(0,60),front:pf==='front',pref:pf,lock:!!s.lock,tag:!g&&!!s.tag,left:!g&&!!s.left,ghost:g};
+      return {id:s.id,name:g?'Fantôme':s.name.slice(0,60),front:pf==='front',pref:pf,lock:!!s.lock,tag:!g&&!!s.tag,left:!g&&!!s.left,absent:!g&&!!s.absent,ghost:g};
     });
   var crit={label:p.crit&&typeof p.crit.label==='string'?p.crit.label.slice(0,20):'Bavard',mix:!!(p.crit&&p.crit.mix)};
   var ids={};students.forEach(function(s){ids[s.id]=1});
@@ -1336,7 +1342,7 @@ function mixStats(p){
   for(var i=0;i<sl.length;i++)for(var j=i+1;j<sl.length;j++){
     if(!side(sl[i],sl[j]))continue;
     var a=byId(p,p.seats[sl[i].key]),b=byId(p,p.seats[sl[j].key]);
-    if(a&&b&&!a.ghost&&!b.ghost&&a.tag===b.tag){if(a.tag)yy++;else nn++}
+    if(a&&b&&!a.ghost&&!b.ghost&&!a.absent&&!b.absent&&a.tag===b.tag){if(a.tag)yy++;else nn++}
   }
   return {yy:yy,nn:nn};
 }
@@ -1383,7 +1389,8 @@ function sameTable(x,y){return x&&y&&x.tid===y.tid}
    et élèves à mettre ensemble qui ne sont pas côte à côte. */
 function ruleIssues(p,seats){
   seats=seats||p.seats;
-  var ap=apartPairs(p),tg=p.together||[],tb=p.apartTable||[];
+  var here=function(x){return !isAbsent(p,x[0])&&!isAbsent(p,x[1])};
+  var ap=apartPairs(p).filter(here),tg=(p.together||[]).filter(here),tb=(p.apartTable||[]).filter(here);
   if(!ap.length&&!tg.length&&!tb.length)return {apart:[],together:[],table:[],n:0};
   var pos={},sl=seatSlots(p),between=betweenOf(sl);
   sl.forEach(function(s){var sid=seats[s.key];if(sid)pos[sid]=s});
@@ -1404,7 +1411,7 @@ function autoSeat(p,mode){
     if(k&&bykey[k]){fixed[k]=s.id;keep[s.id]=1}else s.lock=false;
   });
   var open=slots.filter(function(s){return !fixed[s.key]});
-  var studs=p.students.filter(function(s){return !keep[s.id]});
+  var studs=p.students.filter(function(s){return !keep[s.id]&&!s.absent});
   var base=function(){var o={};for(var k in fixed)o[k]=fixed[k];return o};
   if(mode==='alpha'){
     var seats0=base();
@@ -1422,13 +1429,14 @@ function autoSeat(p,mode){
     p.seats=seats0;
     return ruleIssues(p).n;
   }
-  var pairs=apartPairs(p),tog=p.together||[],tabs=p.apartTable||[];
+  var here=function(x){return !isAbsent(p,x[0])&&!isAbsent(p,x[1])};
+  var pairs=apartPairs(p).filter(here),tog=(p.together||[]).filter(here),tabs=(p.apartTable||[]).filter(here);
   var mix=!!(p.crit&&p.crit.mix),W=1000,G=100,tagOf={},isGhost={},adj=[];
   /* Rang le plus au fond : les places libres y sont légèrement préférées (dernière priorité). */
   var maxR=slots.reduce(function(m,s){return Math.max(m,s.r)},0);
   /* Gauchers : places pour gauchers, et règle des coudes (pas de gaucher juste à droite d'un droitier). */
   var isLeft={},isRight={},L=300,E=20;
-  p.students.forEach(function(s){if(s.ghost)return;if(s.left)isLeft[s.id]=1;else isRight[s.id]=1});
+  p.students.forEach(function(s){if(s.ghost||s.absent)return;if(s.left)isLeft[s.id]=1;else isRight[s.id]=1});
   var nG=Object.keys(isLeft).length,nD=Object.keys(isRight).length;
   var nLH=slots.filter(function(s){return s.lh}).length,nonLH=slots.length-nLH;
   /* Droitiers qui devront de toute façon prendre une place pour gaucher (plus aucune autre place pour eux). */
@@ -1596,7 +1604,7 @@ function seatedInOrder(p){
 function seatSig(seats){return Object.keys(seats).sort().map(function(k){return k+'='+seats[k]}).join(',')}
 /* Paires d'élèves (pas les fantômes) assis côte à côte avec ces places. */
 function neighborPairs(p,seats){
-  var sl=seatSlots(p).filter(function(s){var x=seats[s.key],st=x&&byId(p,x);return st&&!st.ghost}),out=[];
+  var sl=seatSlots(p).filter(function(s){var x=seats[s.key],st=x&&byId(p,x);return st&&!st.ghost&&!st.absent}),out=[];
   for(var i=0;i<sl.length;i++)for(var j=i+1;j<sl.length;j++){if(side(sl[i],sl[j]))out.push([seats[sl[i].key],seats[sl[j].key]])}
   return out;
 }
@@ -1761,6 +1769,7 @@ function dropStudent(p,id){
 function removeStudent(id){mutate(function(p){dropStudent(p,id)})}
 function toggleTag(id){mutate(function(p){var s=byId(p,id);if(s&&!s.ghost)s.tag=!s.tag})}
 function toggleLeft(id){mutate(function(p){var s=byId(p,id);if(s&&!s.ghost)s.left=!s.left})}
+function toggleAbsent(id){mutate(function(p){var s=byId(p,id);if(s&&!s.ghost)s.absent=!s.absent})}
 /* Place pour gaucher : marquée sur la table, donc dans la salle (pour toutes les classes qui y ont cours). */
 function toggleLhSeat(key){
   var m=key.split(':'),tid=m[0],i=+m[1];
@@ -1996,7 +2005,8 @@ function renderPlanBar(){
 }
 function chipHTML(s,placed){
   var sel=ui.sel===s.id,p=plan(),L=esc(critLabel(p));
-  return '<div class="chip'+(placed?' placed':'')+(s.ghost?' ghost':'')+(sel?' sel':'')+'" draggable="true" data-id="'+s.id+'" tabindex="0" aria-pressed="'+sel+'">'+
+  return '<div class="chip'+(placed?' placed':'')+(s.ghost?' ghost':'')+(s.absent?' absent':'')+(sel?' sel':'')+'" draggable="true" data-id="'+s.id+'" tabindex="0" aria-pressed="'+sel+'">'+
+    (s.ghost?'':'<input type="checkbox" class="absck" data-act="absent"'+(s.absent?' checked':'')+' title="Absent à cette séance (son nom disparaît du plan)" aria-label="'+esc(s.name)+' absent">')+
     '<span class="nm">'+(s.ghost?'<span class="ghi">'+GHOST_SM+'</span> ':'')+esc(s.name)+'</span>'+
     (placed?'<button class="icon-btn lock" type="button" data-act="lock" aria-pressed="'+!!s.lock+'" title="Garder à cette place lors d’un mélange" aria-label="Garder '+esc(s.name)+' à sa place">'+LOCK_SVG+'</button>':'')+
     (s.ghost?'':'<button class="icon-btn lhb" type="button" data-act="left" aria-pressed="'+!!s.left+'" title="'+(s.left?'Gaucher':'Droitier')+' (cliquer pour changer)" aria-label="'+esc(s.name)+' est gaucher">'+ICON_HAND+'</button>')+
@@ -2114,7 +2124,9 @@ function tablesHTML(p,layout,present){
     for(var i=0;i<seatCount(t.kind);i++){
       var sp=vt?{lx:i%k.w,ly:Math.floor(i/k.w)}:seatPos(t,i);
       if(V()&&!vt)sp={lx:d.w-1-sp.lx,ly:d.h-1-sp.ly};
-      var key=t.id+':'+i,sid=p.seats[key],s=sid&&byId(p,sid);
+      var key=t.id+':'+i,sid=p.seats[key],s=sid&&byId(p,sid),absName='';
+      /* Élève absent : sa place s'affiche comme une place libre (il la retrouve quand on décoche « absent »). */
+      if(s&&s.absent){absName=s.name;s=null}
       var interactive=!layout&&!present;
       /* Toute place libre montre aussi un fantôme, identique à un fantôme imposé : les élèves ne peuvent pas les distinguer.
          Seule l'infobulle (vue de travail du prof) les différencie ; il n'y en a pas en affichage en grand. */
@@ -2123,7 +2135,7 @@ function tablesHTML(p,layout,present){
         (interactive?' role="button" tabindex="0" aria-label="'+(s?(s.ghost?'Place gardée vide (fantôme)':esc(s.name)):'Place libre')+'"'+(s?' draggable="true" data-id="'+sid+'"':''):'')+'>'+
         (s?(s.ghost?ghostIcon('Fantôme imposé : place gardée vide')+(present?'':(s.lock?MARK_LOCK:'')):
             '<span class="nm">'+esc(s.name)+'</span>'+(present?'':prefMark(s.pref)+(s.lock?MARK_LOCK:'')+(s.tag?'<span class="mark tg" title="'+esc(critLabel(p))+'">'+esc(critAbbr(p))+'</span>':'')+(s.left?MARK_LEFT:''))):
-          (layout?'':ghostIcon('Place libre')))+(t.lh&&t.lh.indexOf(i)>=0?LH_SEAT:'')+'</div>';
+          (layout?'':ghostIcon(absName?'Place de '+esc(absName)+' (absent)':'Place libre')))+(t.lh&&t.lh.indexOf(i)>=0?LH_SEAT:'')+'</div>';
     }
     /* Nom de la table : posé sur le coin de la boîte de la table (hors de .vbox pour une table tournée), donc toujours en haut à gauche. */
     var tn=tname(p,t),numTag='';
@@ -2251,6 +2263,8 @@ function renderStatus(){
     html=parts.join(' · ');
   }else{
     parts=['<strong>'+n+' élève'+(n>1?'s':'')+'</strong>'+(ng?' + '+ng+' fantôme'+(ng>1?'s':''):'')+' pour '+seats+' place'+(seats>1?'s':'')];
+    var nab=realStudents(p).filter(function(s){return s.absent}).length;
+    if(nab)parts.push(nab+' absent'+(nab>1?'s':'')+' (case cochée à gauche) : leur nom n’apparaît pas sur le plan');
     if(n+ng>seats)parts.push('<span class="warn">Il manque '+(n+ng-seats)+' place'+(n+ng-seats>1?'s':'')+'. Ajoutez des tables dans l’onglet Salle'+(ng?' ou retirez des fantômes':'')+'.</span>');
     if(p.crit.mix&&Object.keys(p.seats).length){
       var ms=mixStats(p),CL=esc(critLabel(p));
@@ -2283,7 +2297,7 @@ function planText(p){
   for(r=0;r<p.rows;r++){cells.push([]);for(c=0;c<p.cols;c++)cells[r].push('')}
   seatSlots(p).forEach(function(s){
     var sid=p.seats[s.key],st=sid&&byId(p,sid);
-    cells[s.r][s.c]=st&&!st.ghost?st.name:'(libre)';
+    cells[s.r][s.c]=st&&!st.ghost&&!st.absent?st.name:'(libre)';
   });
   p.tables.forEach(function(t){
     if(seatCount(t.kind)!==0)return;
@@ -2298,7 +2312,7 @@ function planText(p){
     out.push('');
     named.sort(function(a,b){return tname(p,a).localeCompare(tname(p,b),'fr',{numeric:true,sensitivity:'base'})}).forEach(function(t){
       var names=[];
-      for(var i=0;i<seatCount(t.kind);i++){var st=byId(p,p.seats[t.id+':'+i]);if(st&&!st.ghost)names.push(st.name)}
+      for(var i=0;i<seatCount(t.kind);i++){var st=byId(p,p.seats[t.id+':'+i]);if(st&&!st.ghost&&!st.absent)names.push(st.name)}
       out.push(tname(p,t)+'\t'+(names.length?names.join(', '):'(libre)'));
     });
   }
@@ -2457,6 +2471,7 @@ $('side').addEventListener('click',function(e){
     if(act.dataset.act==='lock')toggleLock(id);
     else if(act.dataset.act==='tag')toggleTag(id);
     else if(act.dataset.act==='left')toggleLeft(id);
+    else if(act.dataset.act==='absent')toggleAbsent(id);
     else if(act.dataset.act==='remove')removeStudent(id);
     return;
   }
@@ -3353,6 +3368,7 @@ function buildPdf(p){
       var sp2=vt?{lx:i%k.w,ly:Math.floor(i/k.w)}:seatPos(t,i);
       if(V()&&!vt)sp2={lx:dd.w-1-sp2.lx,ly:dd.h-1-sp2.ly};
       var sid=p.seats[t.id+':'+i],st=sid&&byId(p,sid),x=sp2.lx*sw,y=sp2.ly*sh;
+      if(st&&st.absent)st=null;
       if(!st||st.ghost){fill('#E6DAC0');rect(x+.8,y+.8,sw-1.6,sh-1.6,3,'f')}
       if(t.lh&&t.lh.indexOf(i)>=0){fill('#7A4FB0');rect(x+sw/2-4,y+2,3,4.5,.6,'f');rect(x+sw/2+.5,y+3.8,3.5,2.7,.5,'f')}
       var c=apply(m,x+sw/2,y+sh/2),ca=Math.abs(Math.cos(ang)),sa=Math.abs(Math.sin(ang));
